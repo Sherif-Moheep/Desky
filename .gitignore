@@ -1,0 +1,37 @@
+# ==========================================
+# Gradle & JVM Build Artifacts
+# ==========================================
+.gradle
+**/build/
+!src/**/build/
+out/
+*.class
+
+# Binaries (Ignore JARs except the Gradle wrapper)
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.apk
+*.aab
+
+# Kotlin
+.kotlin
+
+# ==========================================
+# Android & Local Config
+# ==========================================
+local.properties
+captures
+.externalNativeBuild
+.cxx
+
+# ==========================================
+# IDEs & System Files
+# ==========================================
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+/docs/poc
