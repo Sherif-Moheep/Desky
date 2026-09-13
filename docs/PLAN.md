@@ -94,23 +94,55 @@ Desky/
 │               └── api/
 │                   └── Routes.kt           # Shared route constants
 │
-├── android/                                # Android app module
-│   ├── build.gradle.kts
-│   └── src/main/
-│       ├── java/com/desky/app/
-│       │   ├── MainActivity.kt
-│       │   ├── ui/                         # Jetpack Compose UI
-│       │   │   ├── DashboardScreen.kt      # Main control screen
-│       │   │   ├── LedControlScreen.kt     # Color picker + on/off
-│       │   │   ├── LaptopControlScreen.kt  # Power, shutdown, lock
-│       │   │   └── SettingsScreen.kt       # IP address configuration
-│       │   ├── network/                    # Network clients
-│       │   │   ├── EspClient.kt            # HTTP client for ESP32
-│       │   │   ├── LaptopClient.kt         # HTTP client for Ktor server
-│       │   │   └── LedClient.kt            # Raw TCP client (from PoC)
-│       │   └── data/
-│       │       └── SettingsStore.kt        # DataStore for saved IPs
-│       └── AndroidManifest.xml
+├── app/
+│   ├── androidApp/                             # Android application module
+│   │   ├── build.gradle.kts
+│   │   └── src/main/
+│   │       ├── kotlin/org/example/desky/
+│   │       │   ├── MainActivity.kt
+│   │       │   │
+│   │       │   ├── navigation/                 # Navigation 3 multi-stack setup
+│   │       │   │   ├── NavRoute.kt             # Top-level routes (Home, Devices, Settings)
+│   │       │   │   ├── TopLevelBackStack.kt    # Multi-tab backstack manager
+│   │       │   │   └── DeskyBottomBar.kt       # NavigationBar with 3 tabs
+│   │       │   │
+│   │       │   ├── features/
+│   │       │   │   ├── home/                   # Tab 1: Home (Single screen)
+│   │       │   │   │   └── presentation/
+│   │       │   │   │       ├── HomeScreen.kt
+│   │       │   │   │       └── HomeViewModel.kt
+│   │       │   │   │
+│   │       │   │   ├── devices/                # Tab 2: Devices (Nested Graph)
+│   │       │   │   │   ├── navigation/
+│   │       │   │   │   │   ├── DevicesRoutes.kt   # LaptopDetail, LedDetail routes
+│   │       │   │   │   │   └── DevicesEntries.kt  # Nav 3 EntryProvider for devices flow
+│   │       │   │   │   └── presentation/
+│   │       │   │   │       ├── list/              # Devices list screen (root of tab)
+│   │       │   │   │       │   ├── DevicesListScreen.kt
+│   │       │   │   │       │   ├── DevicesViewModel.kt
+│   │       │   │   │       │   └── components/    # DeviceCard.kt, StatusBadge.kt
+│   │       │   │   │       ├── laptop/            # Laptop detail screen
+│   │       │   │   │       │   ├── LaptopDetailScreen.kt
+│   │       │   │   │       │   └── LaptopViewModel.kt
+│   │       │   │   │       └── led/               # LED strip detail screen
+│   │       │   │   │           ├── LedDetailScreen.kt
+│   │       │   │   │           ├── LedViewModel.kt
+│   │       │   │   │           └── components/    # ColorPicker.kt, BrightnessSlider.kt
+│   │       │   │   │
+│   │       │   │   └── settings/               # Tab 3: Settings (Single screen)
+│   │       │   │       ├── data/
+│   │       │   │       │   └── SettingsStore.kt   # DataStore for saved IPs
+│   │       │   │       └── presentation/
+│   │       │   │           ├── SettingsScreen.kt
+│   │       │   │           └── SettingsViewModel.kt
+│   │       │   │
+│   │       │   └── core/
+│   │       │       ├── theme/                  # Theme.kt, Color.kt, Type.kt
+│   │       │       └── ui/                     # Common composables & patterns
+│   │       │
+│   │       └── AndroidManifest.xml
+│   │
+│   └── shared/                                 # Compose Multiplatform shared module
 │
 ├── server/                                 # Laptop Ktor server module
 │   ├── build.gradle.kts
@@ -243,82 +275,48 @@ Key functionality:
 
 ---
 
-### Component 4: `android` — Mobile App
+### Component 4: `app:androidApp` — Mobile App
 
-The main control interface, built with **Jetpack Compose** and **Material 3**.
+The main control interface, built with **Jetpack Compose**, **Material 3**, and **Jetpack Navigation 3**.
 
-#### [NEW] `android/build.gradle.kts`
+#### Dependencies
 - Android application plugin, min SDK 26, target SDK 35
-- Dependencies: Jetpack Compose, Navigation, Ktor Client (OkHttp engine), DataStore, `:shared` module
+- Dependencies: Jetpack Compose, Navigation 3 (`androidx.navigation3:navigation3-ui`, `navigation3-runtime`), Ktor Client (OkHttp engine), DataStore Preferences, `:shared` / `:core` module
 
-#### [NEW] UI Screens (Jetpack Compose)
+#### Navigation Architecture (Navigation 3)
 
-**Dashboard Screen** — The home screen showing all devices as cards:
+The app features a 3-tab bottom bar (`NavigationBar`) with multiple backstacks preserved across tabs via `TopLevelBackStack`:
 
 ```text
-┌─────────────────────────────┐
-│         🖥️  Desky           │
-├─────────────────────────────┤
-│  ┌───────────────────────┐  │
-│  │  💻 Laptop            │  │
-│  │  Status: Online       │  │
-│  │  [Lock] [Sleep] [Off] │  │
-│  │  [Power On]           │  │
-│  └───────────────────────┘  │
-│                             │
-│  ┌───────────────────────┐  │
-│  │  💡 LED Strip         │  │
-│  │  Status: On           │  │
-│  │  ████ Cyan            │  │
-│  │  [Color] [On/Off]     │  │
-│  └───────────────────────┘  │
-│                             │
-│              ⚙️ Settings    │
-└─────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                      Desky Mobile App                       │
+├───────────────────┬─────────────────────┬───────────────────┤
+│    Tab 1: Home    │   Tab 2: Devices    │  Tab 3: Settings  │
+│                   │   (Nested Graph)    │                   │
+│  - Quick actions  │  ┌────────────────┐ │  - ESP32 IP       │
+│  - Desk overview  │  │  Devices List  │ │  - Laptop IP      │
+│  - Overall status │  └───────┬────────┘ │  - LED Strip IP   │
+│                   │     ┌────┴────┐     │  - Saved via      │
+│                   │     ▼         ▼     │    DataStore      │
+│                   │  [Laptop]   [LED]   │                   │
+│                   │  Detail    Detail   │                   │
+├───────────────────┴─────────────────────┴───────────────────┤
+│         [ 🏠 Home ]     [ 📱 Devices ]     [ ⚙️ Settings ]   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**LED Control Screen** — Color wheel/picker, brightness slider, quick-preset buttons (warm white, cool white, red, etc.), on/off toggle.
-
-**Settings Screen** — Text fields for: ESP32 IP, Laptop Server IP, LED Controller IP. Persisted with Jetpack DataStore.
+1. **Tab 1 — Home (`HomeScreen.kt`)**: Single top-level screen for quick actions, master desk power state, and high-level telemetry.
+2. **Tab 2 — Devices (Nested Graph)**:
+   - **Root (`DevicesListScreen.kt`)**: Overview card list of all registered hardware devices (Laptop, LED Strip, ESP32).
+   - **Nested Screen 1 (`LaptopDetailScreen.kt`)**: In-depth laptop controls (Power ON via ESP32 relay, Shutdown, Lock, Sleep, live uptime).
+   - **Nested Screen 2 (`LedDetailScreen.kt`)**: Color wheel/picker, brightness slider, presets (warm white, cool white, party mode), on/off toggle.
+3. **Tab 3 — Settings (`SettingsScreen.kt`)**: Input and configure device IP addresses, persisted securely and reactively via Jetpack DataStore.
 
 #### [NEW] Network Clients
 
-- **`LedClient.kt`**: Adapted from the PoC — raw TCP socket to Magic Home controller. Wrapped in `Dispatchers.IO` coroutine.
+- **`LedClient.kt`**: Adapted from the PoC — raw TCP socket to Magic Home controller (port 5577). Wrapped in `Dispatchers.IO` coroutine.
 - **`LaptopClient.kt`**: Ktor HTTP client → `POST /api/command` with `LaptopCommand` body.
 - **`EspClient.kt`**: Ktor HTTP client → `POST /power` with action body.
-
----
-
-## Implementation Order
-
-```mermaid
-gantt
-    title Desky Build Order
-    dateFormat YYYY-MM-DD
-
-    section Phase 1 - Foundation
-    Gradle monorepo + shared module         :p1a, 2026-09-07, 7d
-    Laptop Ktor server                      :p1b, 2026-09-07, 7d
-
-    section Phase 2 - Hardware
-    ESP32 relay firmware                    :p2, after p1a, 7d
-
-    section Phase 3 - Mobile App
-    Android project + settings screen       :p3a, after p1a, 7d
-    Dashboard + laptop controls             :p3b, after p3a, 7d
-    LED control screen + color picker       :p3c, after p3a, 7d
-
-    section Phase 4 - Polish
-    Auto-start server on boot               :p4a, after p3b, 7d
-    Status polling + error handling         :p4b, after p3b, 7d
-```
-
-| Phase | What | Why First |
-|:---:|:---|:---|
-| **1** | Gradle monorepo structure + `shared` module + Ktor laptop server | Foundation that everything else depends on |
-| **2** | ESP32 firmware + Android project scaffolding + settings screen | Hardware integration + app skeleton |
-| **3** | Dashboard UI + laptop controls + LED control screen | Core user-facing features |
-| **4** | Auto-start, status polling, error handling, UX polish | Reliability and daily-driver readiness |
 
 ---
 

@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 kotlin {
@@ -16,7 +17,12 @@ dependencies {
     implementation(libs.androidx.activity.compose)
 
     implementation(libs.compose.uiToolingPreview)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.text.google.fonts)
     debugImplementation(libs.compose.uiTooling)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.kotlinx.serialization.core)
 }
 
 android {
