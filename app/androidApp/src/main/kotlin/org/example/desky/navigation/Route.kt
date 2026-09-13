@@ -1,0 +1,17 @@
+package org.example.desky.navigation
+
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed interface Route: NavKey {
+
+    @Serializable
+    data object Home: Route
+
+    @Serializable
+    data object Devices: Route
+
+    @Serializable
+    data object Settings: Route
+}
