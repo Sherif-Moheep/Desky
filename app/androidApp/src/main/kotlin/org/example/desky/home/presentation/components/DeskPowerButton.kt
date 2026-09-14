@@ -1,5 +1,10 @@
 package org.example.desky.home.presentation.components
 
+import android.os.Build
+import android.os.VibrationAttributes
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -32,8 +37,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -47,7 +51,15 @@ fun DeskPowerButton(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val vibrator = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(VibratorManager::class.java)
+            manager?.defaultVibrator ?: context.getSystemService(Vibrator::class.java)
+        } else {
+            context.getSystemService(Vibrator::class.java)
+        }
+    }
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -125,7 +137,7 @@ fun DeskPowerButton(
                         interactionSource = interactionSource,
                         indication = null,
                         onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            vibrator.playTactileClick()
                             onToggle()
                         }
                     ),
@@ -203,5 +215,24 @@ fun PreviewDeskPowerButtonOff() {
                 )
             }
         }
+    }
+}
+
+/**
+ * Delivers a crisp, mechanical switch vibration pulse.
+ * Uses modern USAGE_HARDWARE_FEEDBACK so it triggers even when
+ * general touch interaction haptics are disabled in phone settings.
+ */
+private fun Vibrator?.playTactileClick() {
+    if (this == null) return
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val effect = VibrationEffect.createOneShot(35, VibrationEffect.DEFAULT_AMPLITUDE)
+        val attributes = VibrationAttributes.Builder()
+            .setUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK)
+            .build()
+        vibrate(effect, attributes)
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val effect = VibrationEffect.createOneShot(35, VibrationEffect.DEFAULT_AMPLITUDE)
+        vibrate(effect)
     }
 }

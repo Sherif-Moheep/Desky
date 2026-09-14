@@ -26,6 +26,7 @@ import org.example.desky.home.presentation.components.HomeTelemetryUiState
 import org.example.desky.home.presentation.components.LaptopTelemetry
 import org.example.desky.home.presentation.components.LightTelemetry
 import org.example.desky.home.presentation.components.MainTopBar
+import org.example.desky.home.presentation.components.PowerOffConfirmationDialog
 import org.example.desky.home.presentation.components.RelayTelemetry
 import org.example.desky.navigation.BottomNavBar
 import org.example.desky.navigation.Route
@@ -38,6 +39,7 @@ fun MainScreen() {
 //        TopographicPattern()
 //    }
     var isDeskOn by remember { mutableStateOf(true) }
+    var showPowerOffDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
 
     val telemetryState = remember(isDeskOn) {
@@ -83,7 +85,13 @@ fun MainScreen() {
                 ) {
                     DeskPowerButton(
                         isDeskOn = isDeskOn,
-                        onToggle = { isDeskOn = !isDeskOn }
+                        onToggle = {
+                            if (isDeskOn) {
+                                showPowerOffDialog = true
+                            } else {
+                                isDeskOn = true
+                            }
+                        }
                     )
                 }
 
@@ -94,6 +102,18 @@ fun MainScreen() {
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            if (showPowerOffDialog) {
+                PowerOffConfirmationDialog(
+                    onConfirm = {
+                        isDeskOn = false
+                        showPowerOffDialog = false
+                    },
+                    onDismiss = {
+                        showPowerOffDialog = false
+                    }
+                )
             }
         }
     }
