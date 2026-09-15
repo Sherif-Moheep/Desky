@@ -217,3 +217,9 @@ val surfaceContainerLowDarkHighContrast = Color(0xFF1B2023)
 val surfaceContainerDarkHighContrast = Color(0xFF2C3133)
 val surfaceContainerHighDarkHighContrast = Color(0xFF373C3F)
 val surfaceContainerHighestDarkHighContrast = Color(0xFF42484A)
+
+// Status Colors for Badges & Indicators
+val StatusGreen = Color(0xFF4CAF50)
+val StatusGreenBg = Color(0xFF1B5E20).copy(alpha = 0.25f)
+val StatusAmber = Color(0xFFFFB74D)
+val StatusAmberBg = Color(0xFFE65100).copy(alpha = 0.25f)

@@ -7,6 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import org.example.desky.home.presentation.MainScreen
+import org.example.desky.settings.SettingsScreen
+import org.example.desky.theme.DeskyTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,8 +16,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            MainScreen()
-//            App()
+            DeskyTheme {
+//                MainScreen()
+                SettingsScreen()
+            }
+
         }
     }
 }

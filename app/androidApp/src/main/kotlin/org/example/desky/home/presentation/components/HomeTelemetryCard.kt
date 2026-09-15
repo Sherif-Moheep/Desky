@@ -63,7 +63,7 @@ data class LightTelemetry(
 
 data class RelayTelemetry(
     val isAcActive: Boolean = true,
-    val label: String = "Desk Power Relay"
+    val label: String = "Laptop Charger Relay"
 ) {
     val statusText: String
         get() = if (isAcActive) "AC Active" else "AC Cut"
