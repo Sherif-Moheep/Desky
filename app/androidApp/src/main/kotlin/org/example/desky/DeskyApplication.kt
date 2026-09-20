@@ -1,0 +1,20 @@
+package org.example.desky
+
+import android.app.Application
+import org.example.desky.led_strip.di.ledModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
+
+class DeskyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        startKoin {
+            androidLogger(Level.ERROR)
+            androidContext(this@DeskyApplication)
+            modules(ledModule)
+        }
+    }
+}

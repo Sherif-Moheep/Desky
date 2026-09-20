@@ -6,9 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import org.example.desky.home.presentation.MainScreen
-import org.example.desky.settings.SettingsScreen
-import org.example.desky.theme.DeskyTheme
+import org.example.desky.led_strip.presentation.LedScreen
+import org.example.desky.core.theme.DeskyTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,9 +17,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             DeskyTheme {
 //                MainScreen()
-                SettingsScreen()
+//                SettingsScreen()
+                LedScreen(
+                    onBackClick = {},
+                    onNavigateToTab = {}
+                )
             }
-
         }
     }
 }
