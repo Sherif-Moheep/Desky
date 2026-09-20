@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
-import org.example.desky.theme.DeskyTheme
+import org.example.desky.core.theme.DeskyTheme
 
 @Composable
 fun PowerOffConfirmationDialog(

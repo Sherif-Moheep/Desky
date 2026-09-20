@@ -1,4 +1,4 @@
-package org.example.desky.theme
+package org.example.desky.core.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontFamily

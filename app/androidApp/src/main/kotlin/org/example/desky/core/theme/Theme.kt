@@ -1,4 +1,4 @@
-package org.example.desky.theme
+package org.example.desky.core.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

@@ -1,4 +1,4 @@
-package org.example.desky.theme
+package org.example.desky.core.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -29,7 +29,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
-import org.example.desky.theme.DeskyTheme
+import org.example.desky.core.theme.DeskyTheme
 
 enum class AppThemeMode(val label: String) {
     SYSTEM("System"),

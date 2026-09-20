@@ -30,7 +30,7 @@ import org.example.desky.home.presentation.components.PowerOffConfirmationDialog
 import org.example.desky.home.presentation.components.RelayTelemetry
 import org.example.desky.navigation.BottomNavBar
 import org.example.desky.navigation.Route
-import org.example.desky.theme.DeskyTheme
+import org.example.desky.core.theme.DeskyTheme
 
 @PreviewLightDark
 @Composable

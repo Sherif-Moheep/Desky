@@ -31,11 +31,11 @@ import org.example.desky.navigation.Route
 import org.example.desky.settings.components.AppInfoCard
 import org.example.desky.settings.components.AppThemeMode
 import org.example.desky.settings.components.DeviceConfigCard
-import org.example.desky.settings.components.DeviceConnectionStatus
+import org.example.desky.core.components.DeviceConnectionStatus
 import org.example.desky.settings.components.ResetSettingsDialog
 import org.example.desky.settings.components.SettingsTopBar
 import org.example.desky.settings.components.ThemeSelectorCard
-import org.example.desky.theme.DeskyTheme
+import org.example.desky.core.theme.DeskyTheme
 
 @Composable
 fun SettingsScreen(

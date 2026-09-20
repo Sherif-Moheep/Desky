@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -18,14 +17,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
-import org.example.desky.theme.*
-
-sealed interface DeviceConnectionStatus {
-    data object Idle : DeviceConnectionStatus
-    data object Pinging : DeviceConnectionStatus
-    data class Online(val latencyMs: Long) : DeviceConnectionStatus
-    data class Offline(val message: String = "Offline") : DeviceConnectionStatus
-}
+import org.example.desky.core.components.DeviceConnectionStatus
+import org.example.desky.core.components.StatusBadge
+import org.example.desky.core.theme.DeskyTheme
 
 @Composable
 fun DeviceConfigCard(
@@ -188,65 +182,13 @@ private fun InputField(
     )
 }
 
-@Composable
-private fun StatusBadge(
-    status: DeviceConnectionStatus,
-    modifier: Modifier = Modifier
-) {
-    val (bgColor, textColor, label) = when (status) {
-        is DeviceConnectionStatus.Online -> Triple(
-            StatusGreenBg,
-            StatusGreen,
-            "Online · ${status.latencyMs}ms"
-        )
-        is DeviceConnectionStatus.Pinging -> Triple(
-            StatusAmberBg,
-            StatusAmber,
-            "Testing..."
-        )
-        is DeviceConnectionStatus.Offline -> Triple(
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.error,
-            status.message
-        )
-        is DeviceConnectionStatus.Idle -> Triple(
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.onSurfaceVariant,
-            "Untested"
-        )
-    }
-
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(50),
-        color = bgColor
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(color = textColor, shape = CircleShape)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = textColor
-            )
-        }
-    }
-}
 
 
 @PreviewLightDark
 @Composable
 fun PreviewDeviceConfigCard() {
     DeskyTheme {
-        Column (modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             DeviceConfigCard(
                 name = "ESP32 Power Relay",
                 subtitle = "Laptop charger AC relay",
