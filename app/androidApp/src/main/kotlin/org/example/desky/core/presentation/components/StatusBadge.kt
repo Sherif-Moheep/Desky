@@ -1,4 +1,4 @@
-package org.example.desky.core.components
+package org.example.desky.core.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -18,10 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.example.desky.core.theme.StatusAmber
-import org.example.desky.core.theme.StatusAmberBg
-import org.example.desky.core.theme.StatusGreen
-import org.example.desky.core.theme.StatusGreenBg
+import org.example.desky.core.presentation.theme.StatusAmber
+import org.example.desky.core.presentation.theme.StatusAmberBg
+import org.example.desky.core.presentation.theme.StatusGreen
+import org.example.desky.core.presentation.theme.StatusGreenBg
 
 sealed interface DeviceConnectionStatus {
     data object Idle : DeviceConnectionStatus

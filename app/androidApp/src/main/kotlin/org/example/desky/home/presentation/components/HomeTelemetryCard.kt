@@ -25,7 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
-import org.example.desky.core.theme.DeskyTheme
+import org.example.desky.core.presentation.theme.DeskyTheme
 
 // ----------------------------------------------------------------------------
 // Telemetry UI Models

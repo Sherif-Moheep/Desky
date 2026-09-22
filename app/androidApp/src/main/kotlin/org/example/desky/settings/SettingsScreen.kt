@@ -14,53 +14,65 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation3.runtime.NavKey
 import org.example.desky.R
+import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.navigation.BottomNavBar
 import org.example.desky.navigation.Route
 import org.example.desky.settings.components.AppInfoCard
-import org.example.desky.settings.components.AppThemeMode
 import org.example.desky.settings.components.DeviceConfigCard
-import org.example.desky.core.components.DeviceConnectionStatus
 import org.example.desky.settings.components.ResetSettingsDialog
 import org.example.desky.settings.components.SettingsTopBar
 import org.example.desky.settings.components.ThemeSelectorCard
-import org.example.desky.core.theme.DeskyTheme
+import org.example.desky.settings.presentation.SettingsViewModel
+import org.example.desky.settings.presentation.contract.DeviceType
+import org.example.desky.settings.presentation.contract.SettingsEffect
+import org.example.desky.settings.presentation.contract.SettingsIntent
+import org.example.desky.settings.presentation.contract.SettingsState
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsScreen(
+    modifier: Modifier = Modifier,
+    onNavigateToTab: (NavKey) -> Unit = {},
+    viewModel: SettingsViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is SettingsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+            }
+        }
+    }
+
+    SettingsContent(
+        state = state,
+        onIntent = viewModel::onIntent,
+        snackbarHostState = snackbarHostState,
+        onNavigateToTab = onNavigateToTab,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun SettingsContent(
+    state: SettingsState,
+    onIntent: (SettingsIntent) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onNavigateToTab: (NavKey) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-    var showResetDialog by remember { mutableStateOf(false) }
-
-    // Device Config State
-    var espHost by remember { mutableStateOf("desky-relay.local") }
-    var espPort by remember { mutableStateOf("80") }
-    var espStatus by remember { mutableStateOf<DeviceConnectionStatus>(DeviceConnectionStatus.Online(12)) }
-
-    var laptopHost by remember { mutableStateOf("desky-laptop.local") }
-    var laptopPort by remember { mutableStateOf("8080") }
-    var laptopStatus by remember { mutableStateOf<DeviceConnectionStatus>(DeviceConnectionStatus.Online(4)) }
-
-    var ledHost by remember { mutableStateOf("192.168.1.150") }
-    var ledPort by remember { mutableStateOf("5577") }
-    var ledStatus by remember { mutableStateOf<DeviceConnectionStatus>(DeviceConnectionStatus.Idle) }
-
-    // Appearance State
-    var themeMode by remember { mutableStateOf(AppThemeMode.SYSTEM) }
-
     Scaffold(
         topBar = {
             SettingsTopBar()
@@ -68,7 +80,7 @@ fun SettingsScreen(
         bottomBar = {
             BottomNavBar(
                 selectedKey = Route.Settings,
-                onSelectedKey = { },
+                onSelectedKey = onNavigateToTab,
             )
         },
         snackbarHost = {
@@ -90,98 +102,61 @@ fun SettingsScreen(
                 name = "ESP32 Power Relay",
                 subtitle = "Laptop charger AC relay",
                 iconRes = R.drawable.electricity,
-                host = espHost,
-                onHostChange = { espHost = it },
-                port = espPort,
-                onPortChange = { espPort = it },
-                status = espStatus,
-                onActionClick = {
-                    coroutineScope.launch {
-                        espStatus = DeviceConnectionStatus.Pinging
-                        delay(600)
-                        espStatus = DeviceConnectionStatus.Online((8..20).random().toLong())
-                    }
-                }
+                host = state.espHost,
+                onHostChange = { onIntent(SettingsIntent.UpdateEspHost(it)) },
+                port = state.espPort,
+                onPortChange = { onIntent(SettingsIntent.UpdateEspPort(it)) },
+                status = state.espStatus,
+                onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.ESP_RELAY)) }
             )
 
             DeviceConfigCard(
                 name = "Laptop",
                 subtitle = "Windows Ktor server",
                 iconRes = R.drawable.laptop,
-                host = laptopHost,
-                onHostChange = { laptopHost = it },
-                port = laptopPort,
-                onPortChange = { laptopPort = it },
-                status = laptopStatus,
-                onActionClick = {
-                    coroutineScope.launch {
-                        laptopStatus = DeviceConnectionStatus.Pinging
-                        delay(500)
-                        laptopStatus = DeviceConnectionStatus.Online((3..10).random().toLong())
-                    }
-                }
+                host = state.laptopHost,
+                onHostChange = { onIntent(SettingsIntent.UpdateLaptopHost(it)) },
+                port = state.laptopPort,
+                onPortChange = { onIntent(SettingsIntent.UpdateLaptopPort(it)) },
+                status = state.laptopStatus,
+                onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.LAPTOP)) }
             )
 
             DeviceConfigCard(
                 name = "LED Strip Controller",
                 subtitle = "Magic Home Controller",
                 iconRes = R.drawable.led_strip,
-                host = ledHost,
-                onHostChange = { ledHost = it },
-                port = ledPort,
-                onPortChange = { ledPort = it },
-                status = ledStatus,
-                onActionClick = {
-                    coroutineScope.launch {
-                        ledStatus = DeviceConnectionStatus.Pinging
-                        delay(700)
-                        ledStatus = DeviceConnectionStatus.Online((15..45).random().toLong())
-                    }
-                }
+                host = state.ledHost,
+                onHostChange = { onIntent(SettingsIntent.UpdateLedHost(it)) },
+                port = state.ledPort,
+                onPortChange = { onIntent(SettingsIntent.UpdateLedPort(it)) },
+                status = state.ledStatus,
+                onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.LED_STRIP)) }
             )
 
             // Section: Appearance
             SectionHeader(title = "Appearance")
 
             ThemeSelectorCard(
-                currentTheme = themeMode,
-                onThemeChange = { themeMode = it }
+                currentTheme = state.themeMode,
+                onThemeChange = { onIntent(SettingsIntent.SetThemeMode(it)) }
             )
 
             // Section: About & Maintenance
             SectionHeader(title = "About & Maintenance")
 
             AppInfoCard(
-                onResetDefaults = { showResetDialog = true }
+                onResetDefaults = { onIntent(SettingsIntent.ShowResetDialog) }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
 
-    if (showResetDialog) {
+    if (state.showResetDialog) {
         ResetSettingsDialog(
-            onConfirm = {
-                showResetDialog = false
-                espHost = "desky-relay.local"
-                espPort = "80"
-                espStatus = DeviceConnectionStatus.Idle
-
-                laptopHost = "desky-laptop.local"
-                laptopPort = "8080"
-                laptopStatus = DeviceConnectionStatus.Idle
-
-                ledHost = "192.168.1.150"
-                ledPort = "5577"
-                ledStatus = DeviceConnectionStatus.Idle
-
-                themeMode = AppThemeMode.SYSTEM
-
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Settings restored to defaults")
-                }
-            },
-            onDismiss = { showResetDialog = false }
+            onConfirm = { onIntent(SettingsIntent.ConfirmReset) },
+            onDismiss = { onIntent(SettingsIntent.DismissResetDialog) }
         )
     }
 }
@@ -204,6 +179,18 @@ private fun SectionHeader(
 @Composable
 fun PreviewSettingsScreen() {
     DeskyTheme {
-        SettingsScreen()
+        SettingsContent(
+            state = SettingsState(
+                espHost = "desky-relay.local",
+                espPort = "80",
+                laptopHost = "desky-laptop.local",
+                laptopPort = "8080",
+                ledHost = "192.168.1.150",
+                ledPort = "5577"
+            ),
+            onIntent = {},
+            snackbarHostState = remember { SnackbarHostState() },
+            onNavigateToTab = {}
+        )
     }
 }

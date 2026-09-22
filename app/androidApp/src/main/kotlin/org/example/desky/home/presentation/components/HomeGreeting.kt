@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.example.desky.core.theme.DeskyTheme
+import org.example.desky.core.presentation.theme.DeskyTheme
 import java.util.Calendar
 
 data class GreetingContent(

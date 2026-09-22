@@ -1,7 +1,7 @@
 package org.example.desky.led_strip.presentation.contract
 
 import androidx.compose.ui.graphics.Color
-import org.example.desky.core.components.DeviceConnectionStatus
+import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.led_strip.presentation.model.LedPresetItem
 import org.example.desky.led_strip.presentation.model.PresetSheetMode
 

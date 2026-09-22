@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.example.desky.core.components.DeviceConnectionStatus
-import org.example.desky.led_strip.data.datasource.LedPresetDataStore
+import org.example.desky.core.domain.repository.SettingsRepository
+import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.led_strip.data.datasource.MagicHomeDiscoveryDataSource
 import org.example.desky.led_strip.data.datasource.MagicHomeSocketDataSource
 import org.example.desky.led_strip.domain.model.LedDeviceState
@@ -17,27 +17,35 @@ import org.example.desky.led_strip.domain.repository.LedControllerRepository
 class LedControllerRepositoryImpl(
     private val socketDataSource: MagicHomeSocketDataSource,
     private val discoveryDataSource: MagicHomeDiscoveryDataSource,
-    private val dataStore: LedPresetDataStore
+    private val settingsRepository: SettingsRepository
 ) : LedControllerRepository {
 
     private val _connectionStatus = MutableStateFlow<DeviceConnectionStatus>(DeviceConnectionStatus.Idle)
     override val connectionStatus: StateFlow<DeviceConnectionStatus> = _connectionStatus.asStateFlow()
 
-    private var currentIp: String = LedPresetDataStore.DEFAULT_IP
+    private var currentIp: String = ""
     private val connectMutex = Mutex()
+
+    private suspend fun resolveIp(): String {
+        if (currentIp.isBlank()) {
+            currentIp = settingsRepository.ledEndpointFlow.first().host
+        }
+        return currentIp
+    }
 
     override suspend fun connect(
         forceRediscovery: Boolean
     ): Result<LedDeviceState> = connectMutex.withLock {
         _connectionStatus.value = DeviceConnectionStatus.Pinging
-        val cachedIp = dataStore.controllerIpFlow.first()
-        currentIp = cachedIp
+        val configuredEndpoint = settingsRepository.ledEndpointFlow.first()
+        val targetIp = configuredEndpoint.host
+        currentIp = targetIp
 
-        // 1. Try cached IP first (unless force rediscovery requested)
-        if (!forceRediscovery) {
+        // 1. Try configured IP from Settings first (unless force rediscovery requested)
+        if (!forceRediscovery && targetIp.isNotBlank()) {
             val startMs = System.currentTimeMillis()
             try {
-                val state = socketDataSource.queryStatus(cachedIp)
+                val state = socketDataSource.queryStatus(targetIp)
                 if (state != null) {
                     val latency = (System.currentTimeMillis() - startMs).coerceAtLeast(1)
                     _connectionStatus.value = DeviceConnectionStatus.Online(latency)
@@ -46,7 +54,7 @@ class LedControllerRepositoryImpl(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                // Connection to cached IP failed, fall through to auto-discovery
+                // Connection to configured IP failed, fall through to auto-discovery
             }
         }
 
@@ -57,7 +65,7 @@ class LedControllerRepositoryImpl(
 
             if (newIp != null) {
                 currentIp = newIp
-                dataStore.saveControllerIp(newIp)
+                settingsRepository.updateLedEndpoint(newIp, configuredEndpoint.port)
 
                 val startMs = System.currentTimeMillis()
                 val state = socketDataSource.queryStatus(newIp)
@@ -83,10 +91,11 @@ class LedControllerRepositoryImpl(
     ): Result<Unit> {
         val startMs = System.currentTimeMillis()
         return try {
+            val ip = resolveIp()
             if (isOn) {
-                socketDataSource.turnOn(currentIp)
+                socketDataSource.turnOn(ip)
             } else {
-                socketDataSource.turnOff(currentIp)
+                socketDataSource.turnOff(ip)
             }
             val latency = (System.currentTimeMillis() - startMs).coerceAtLeast(1)
             _connectionStatus.value = DeviceConnectionStatus.Online(latency)
@@ -99,10 +108,15 @@ class LedControllerRepositoryImpl(
         }
     }
 
-    override suspend fun setRgb(r: Int, g: Int, b: Int): Result<Unit> {
+    override suspend fun setRgb(
+        r: Int,
+        g: Int,
+        b: Int
+    ): Result<Unit> {
         val startMs = System.currentTimeMillis()
         return try {
-            socketDataSource.setRgb(currentIp, r, g, b)
+            val ip = resolveIp()
+            socketDataSource.setRgb(ip, r, g, b)
             val latency = (System.currentTimeMillis() - startMs).coerceAtLeast(1)
             _connectionStatus.value = DeviceConnectionStatus.Online(latency)
             Result.success(Unit)
@@ -116,12 +130,13 @@ class LedControllerRepositoryImpl(
 
     override suspend fun queryStatus(): Result<LedDeviceState> {
         return try {
-            val state = socketDataSource.queryStatus(currentIp)
+            val ip = resolveIp()
+            val state = socketDataSource.queryStatus(ip)
                 ?: throw IllegalStateException("No response from controller")
             Result.success(state)
         } catch (e: CancellationException) {
             throw e
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             Result.failure(e)
         }
     }

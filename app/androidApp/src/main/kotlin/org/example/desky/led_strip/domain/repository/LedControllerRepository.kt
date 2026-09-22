@@ -1,7 +1,7 @@
 package org.example.desky.led_strip.domain.repository
 
 import kotlinx.coroutines.flow.StateFlow
-import org.example.desky.core.components.DeviceConnectionStatus
+import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.led_strip.domain.model.LedDeviceState
 
 interface LedControllerRepository {

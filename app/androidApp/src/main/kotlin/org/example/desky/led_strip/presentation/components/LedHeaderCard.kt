@@ -34,9 +34,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
-import org.example.desky.core.components.DeviceConnectionStatus
-import org.example.desky.core.components.StatusBadge
-import org.example.desky.core.theme.DeskyTheme
+import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.presentation.components.StatusBadge
+import org.example.desky.core.presentation.theme.DeskyTheme
 
 @Composable
 fun LedHeaderCard(

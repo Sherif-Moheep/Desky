@@ -15,17 +15,12 @@ import org.json.JSONObject
 
 private val Context.ledDataStore: DataStore<Preferences> by preferencesDataStore(name = "desky_led_prefs")
 
-/**
- * DataStore storage for LED presets and cached controller network address.
- */
 class LedPresetDataStore(
     private val context: Context
 ) {
     companion object {
         val KEY_PRESETS_JSON = stringPreferencesKey("led_presets_json")
-        val KEY_CONTROLLER_IP = stringPreferencesKey("led_controller_ip")
         val KEY_LAST_BRIGHTNESS = floatPreferencesKey("led_last_brightness")
-        const val DEFAULT_IP = "192.168.1.21"
         const val DEFAULT_BRIGHTNESS = 0.85f
 
         private val InitialPresets = listOf(
@@ -49,10 +44,6 @@ class LedPresetDataStore(
         }
     }
 
-    val controllerIpFlow: Flow<String> = context.ledDataStore.data.map { prefs ->
-        prefs[KEY_CONTROLLER_IP]?.takeIf { it.isNotBlank() } ?: DEFAULT_IP
-    }
-
     val lastBrightnessFlow: Flow<Float> = context.ledDataStore.data.map { prefs ->
         prefs[KEY_LAST_BRIGHTNESS] ?: DEFAULT_BRIGHTNESS
     }
@@ -61,12 +52,6 @@ class LedPresetDataStore(
         val json = serializePresets(presets)
         context.ledDataStore.edit { prefs ->
             prefs[KEY_PRESETS_JSON] = json
-        }
-    }
-
-    suspend fun saveControllerIp(ip: String) {
-        context.ledDataStore.edit { prefs ->
-            prefs[KEY_CONTROLLER_IP] = ip
         }
     }
 

@@ -31,7 +31,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import org.example.desky.R
-import org.example.desky.core.theme.DeskyTheme
+import org.example.desky.core.presentation.theme.DeskyTheme
 
 @Composable
 fun LedBrightnessSlider(

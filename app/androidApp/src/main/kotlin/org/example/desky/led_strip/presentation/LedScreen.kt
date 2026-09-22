@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import org.example.desky.R
-import org.example.desky.core.theme.DeskyTheme
+import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.led_strip.presentation.components.DonutColorWheel
 import org.example.desky.led_strip.presentation.components.LedBrightnessSlider
 import org.example.desky.led_strip.presentation.components.LedHeaderCard

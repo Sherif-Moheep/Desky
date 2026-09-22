@@ -15,13 +15,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.desky.core.components.DeviceConnectionStatus
+import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.led_strip.domain.usecase.LedUseCases
 import org.example.desky.led_strip.presentation.contract.LedEffect
 import org.example.desky.led_strip.presentation.contract.LedIntent
 import org.example.desky.led_strip.presentation.contract.LedState
 import org.example.desky.led_strip.presentation.model.LedPresetItem
-import org.example.desky.led_strip.presentation.model.PresetSheetMode
 import org.example.desky.led_strip.presentation.model.toDomain
 import org.example.desky.led_strip.presentation.model.toUiItem
 import kotlin.math.roundToInt
