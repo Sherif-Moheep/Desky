@@ -1,10 +1,7 @@
 package org.example.desky.home.presentation.components
 
-import android.os.Build
-import android.os.VibrationAttributes
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
+import org.example.desky.core.presentation.util.playTactileClick
+import org.example.desky.core.presentation.util.rememberVibrator
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -51,15 +48,7 @@ fun DeskPowerButton(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val vibrator = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = context.getSystemService(VibratorManager::class.java)
-            manager?.defaultVibrator ?: context.getSystemService(Vibrator::class.java)
-        } else {
-            context.getSystemService(Vibrator::class.java)
-        }
-    }
+    val vibrator = rememberVibrator()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -215,24 +204,5 @@ fun PreviewDeskPowerButtonOff() {
                 )
             }
         }
-    }
-}
-
-/**
- * Delivers a crisp, mechanical switch vibration pulse.
- * Uses modern USAGE_HARDWARE_FEEDBACK so it triggers even when
- * general touch interaction haptics are disabled in phone settings.
- */
-private fun Vibrator?.playTactileClick() {
-    if (this == null) return
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val effect = VibrationEffect.createOneShot(35, VibrationEffect.DEFAULT_AMPLITUDE)
-        val attributes = VibrationAttributes.Builder()
-            .setUsage(VibrationAttributes.USAGE_HARDWARE_FEEDBACK)
-            .build()
-        vibrate(effect, attributes)
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val effect = VibrationEffect.createOneShot(35, VibrationEffect.DEFAULT_AMPLITUDE)
-        vibrate(effect)
     }
 }
