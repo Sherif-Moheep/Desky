@@ -1,9 +1,12 @@
 package org.example.desky.home.presentation.components
 
-import org.example.desky.core.presentation.util.playTactileClick
-import org.example.desky.core.presentation.util.rememberVibrator
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -30,21 +33,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
 import org.example.desky.core.presentation.theme.DeskyTheme
+import org.example.desky.core.presentation.theme.StatusAmber
+import org.example.desky.core.presentation.util.playTactileClick
+import org.example.desky.core.presentation.util.rememberVibrator
+import org.example.desky.home.presentation.model.DeskPowerState
 
 @Composable
 fun DeskPowerButton(
-    isDeskOn: Boolean,
+    powerState: DeskPowerState,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -52,33 +60,62 @@ fun DeskPowerButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
+    val isInteractive = powerState == DeskPowerState.OFF || powerState == DeskPowerState.ON
+
     val activeColor = MaterialTheme.colorScheme.primary
     val buttonSize = 190.dp
 
-    // Tactile press spring animation
+    // Tactile press spring animation (active only when interactive)
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
+        targetValue = if (isPressed && isInteractive) 0.94f else 1f,
         animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
         label = "button_scale"
     )
 
     // Animated colors and glow transitions
     val animatedActiveColor by animateColorAsState(
-        targetValue = if (isDeskOn) activeColor else MaterialTheme.colorScheme.outlineVariant,
+        targetValue = when (powerState) {
+            DeskPowerState.ON -> activeColor
+            DeskPowerState.BOOTING -> StatusAmber
+            DeskPowerState.SHUTTING_DOWN -> MaterialTheme.colorScheme.error
+            DeskPowerState.OFF -> MaterialTheme.colorScheme.outlineVariant
+        },
         animationSpec = tween(durationMillis = 350),
         label = "ring_color"
     )
 
     val iconTint by animateColorAsState(
-        targetValue = if (isDeskOn) activeColor else MaterialTheme.colorScheme.outline,
+        targetValue = when (powerState) {
+            DeskPowerState.ON -> activeColor
+            DeskPowerState.BOOTING -> StatusAmber
+            DeskPowerState.SHUTTING_DOWN -> MaterialTheme.colorScheme.error
+            DeskPowerState.OFF -> MaterialTheme.colorScheme.outline
+        },
         animationSpec = tween(durationMillis = 350),
         label = "icon_tint"
     )
 
     val glowAlpha by animateFloatAsState(
-        targetValue = if (isDeskOn) 0.35f else 0f,
+        targetValue = when (powerState) {
+            DeskPowerState.ON -> 0.35f
+            DeskPowerState.BOOTING -> 0.25f
+            DeskPowerState.SHUTTING_DOWN -> 0.25f
+            DeskPowerState.OFF -> 0f
+        },
         animationSpec = tween(durationMillis = 400),
         label = "glow_alpha"
+    )
+
+    // Infinite rotation animation for BOOTING state
+    val infiniteTransition = rememberInfiniteTransition(label = "desk_spin_transition")
+    val spinRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "desk_spin_rotation"
     )
 
     Column(
@@ -97,8 +134,8 @@ fun DeskPowerButton(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                activeColor.copy(alpha = glowAlpha),
-                                activeColor.copy(alpha = glowAlpha * 0.4f),
+                                animatedActiveColor.copy(alpha = glowAlpha),
+                                animatedActiveColor.copy(alpha = glowAlpha * 0.4f),
                                 Color.Transparent
                             ),
                             center = center,
@@ -108,14 +145,31 @@ fun DeskPowerButton(
                 }
             }
 
-            // 2. Outer Glowing Bezel Ring
-            Canvas(modifier = Modifier.size(buttonSize)) {
-                val strokeWidth = 5.dp.toPx()
-                drawCircle(
-                    color = animatedActiveColor,
-                    style = Stroke(width = strokeWidth),
-                    radius = (size.minDimension - strokeWidth) / 2f
-                )
+            // 2. Outer Glowing Bezel Ring (Spinning arc if BOOTING, solid circle otherwise)
+            if (powerState == DeskPowerState.BOOTING) {
+                Canvas(
+                    modifier = Modifier
+                        .size(buttonSize)
+                        .rotate(spinRotation)
+                ) {
+                    val strokeWidth = 5.dp.toPx()
+                    drawArc(
+                        color = animatedActiveColor,
+                        startAngle = 0f,
+                        sweepAngle = 280f,
+                        useCenter = false,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    )
+                }
+            } else {
+                Canvas(modifier = Modifier.size(buttonSize)) {
+                    val strokeWidth = 5.dp.toPx()
+                    drawCircle(
+                        color = animatedActiveColor,
+                        style = Stroke(width = strokeWidth),
+                        radius = (size.minDimension - strokeWidth) / 2f
+                    )
+                }
             }
 
             // 3. Inner Tactile Hardware Cap
@@ -125,6 +179,7 @@ fun DeskPowerButton(
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null,
+                        enabled = isInteractive,
                         onClick = {
                             vibrator.playTactileClick()
                             onToggle()
@@ -141,7 +196,12 @@ fun DeskPowerButton(
                     // Center Power Icon
                     Icon(
                         painter = painterResource(id = R.drawable.power),
-                        contentDescription = if (isDeskOn) "Turn Desk Power Off" else "Turn Desk Power On",
+                        contentDescription = when (powerState) {
+                            DeskPowerState.ON -> "Turn Desk Power Off"
+                            DeskPowerState.OFF -> "Turn Desk Power On"
+                            DeskPowerState.BOOTING -> "Desk Power Starting..."
+                            DeskPowerState.SHUTTING_DOWN -> "Desk Power Shutting Down..."
+                        },
                         tint = iconTint,
                         modifier = Modifier.size(buttonSize * 0.28f)
                     )
@@ -161,15 +221,23 @@ fun DeskPowerButton(
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            val (statusText, statusColor) = when (powerState) {
+                DeskPowerState.ON -> "ON" to animatedActiveColor
+                DeskPowerState.BOOTING -> "STARTING..." to StatusAmber
+                DeskPowerState.SHUTTING_DOWN -> "SHUTTING DOWN..." to MaterialTheme.colorScheme.error
+                DeskPowerState.OFF -> "OFF" to MaterialTheme.colorScheme.outline
+            }
             Text(
-                text = if (isDeskOn) "ON" else "OFF",
+                text = statusText,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = if (isDeskOn) animatedActiveColor else MaterialTheme.colorScheme.outline
+                color = statusColor
             )
         }
     }
 }
+
+
 
 @PreviewLightDark
 @Composable
@@ -181,7 +249,25 @@ fun PreviewDeskPowerButtonOn() {
                 contentAlignment = Alignment.Center
             ) {
                 DeskPowerButton(
-                    isDeskOn = true,
+                    powerState = DeskPowerState.ON,
+                    onToggle = {}
+                )
+            }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+fun PreviewDeskPowerButtonBooting() {
+    DeskyTheme {
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            Box(
+                modifier = Modifier.padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                DeskPowerButton(
+                    powerState = DeskPowerState.BOOTING,
                     onToggle = {}
                 )
             }
@@ -199,7 +285,25 @@ fun PreviewDeskPowerButtonOff() {
                 contentAlignment = Alignment.Center
             ) {
                 DeskPowerButton(
-                    isDeskOn = false,
+                    powerState = DeskPowerState.OFF,
+                    onToggle = {}
+                )
+            }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+fun PreviewDeskPowerButtonShuttingDown() {
+    DeskyTheme {
+        Surface(color = MaterialTheme.colorScheme.surface) {
+            Box(
+                modifier = Modifier.padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                DeskPowerButton(
+                    powerState = DeskPowerState.SHUTTING_DOWN,
                     onToggle = {}
                 )
             }

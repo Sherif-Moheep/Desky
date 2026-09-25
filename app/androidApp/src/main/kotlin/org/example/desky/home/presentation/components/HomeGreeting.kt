@@ -10,55 +10,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.core.presentation.theme.DeskyTheme
+import org.example.desky.home.presentation.model.DeskPowerState
+import org.example.desky.home.presentation.model.getGreetingContent
 import java.util.Calendar
-
-data class GreetingContent(
-    val headline: String,
-    val subtitle: String
-)
-
-fun getGreetingContent(
-    isDeskOn: Boolean,
-    hour: Int
-): GreetingContent {
-    if (!isDeskOn) {
-        return GreetingContent(
-            headline = "Desk is asleep.",
-            subtitle = "Rest well. Workspace is powered down."
-        )
-    }
-
-    return when (hour) {
-        in 5..11 -> GreetingContent(
-            headline = "Ready to work.",
-            subtitle = "Good morning. Have a productive session."
-        )
-        in 12..17 -> GreetingContent(
-            headline = "Ready to work.",
-            subtitle = "Good afternoon. Workspace is ready for focus."
-        )
-        in 18..23 -> GreetingContent(
-            headline = "Ready to work.",
-            subtitle = "Good evening. Ready for the night session."
-        )
-        else -> GreetingContent(
-            headline = "Ready to work.",
-            subtitle = "The world is asleep. Time to build."
-        )
-    }
-}
 
 @Composable
 fun HomeGreeting(
-    isDeskOn: Boolean,
+    powerState: DeskPowerState,
     modifier: Modifier = Modifier,
     hour: Int = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
 ) {
-    val greeting = remember(isDeskOn, hour) {
-        getGreetingContent(isDeskOn = isDeskOn, hour = hour)
+    val greeting = remember(powerState, hour) {
+        getGreetingContent(powerState = powerState, hour = hour)
     }
 
     Column(modifier = modifier) {
@@ -80,29 +46,20 @@ fun HomeGreeting(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF121212)
+
+
+@PreviewLightDark
 @Composable
 fun PreviewAllGreetingStates() {
-    DeskyTheme(darkTheme = true) {
+    DeskyTheme {
         Column(modifier = Modifier.padding(16.dp)) {
-            // 1. Morning
-            HomeGreeting(isDeskOn = true, hour = 8)
+            HomeGreeting(powerState = DeskPowerState.ON, hour = 8)
             Spacer(modifier = Modifier.height(24.dp))
-
-            // 2. Afternoon
-            HomeGreeting(isDeskOn = true, hour = 14)
+            HomeGreeting(powerState = DeskPowerState.BOOTING)
             Spacer(modifier = Modifier.height(24.dp))
-
-            // 3. Evening
-            HomeGreeting(isDeskOn = true, hour = 20)
+            HomeGreeting(powerState = DeskPowerState.SHUTTING_DOWN)
             Spacer(modifier = Modifier.height(24.dp))
-
-            // 4. Night Owl
-            HomeGreeting(isDeskOn = true, hour = 2)
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 5. Desk OFF
-            HomeGreeting(isDeskOn = false, hour = 14)
+            HomeGreeting(powerState = DeskPowerState.OFF)
         }
     }
 }

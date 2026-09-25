@@ -26,62 +26,11 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
 import org.example.desky.core.presentation.theme.DeskyTheme
-
-// ----------------------------------------------------------------------------
-// Telemetry UI Models
-// ----------------------------------------------------------------------------
-
-data class HomeTelemetryUiState(
-    val laptop: LaptopTelemetry = LaptopTelemetry(),
-    val light: LightTelemetry = LightTelemetry(),
-    val relay: RelayTelemetry = RelayTelemetry(),
-    val network: NetworkTelemetry = NetworkTelemetry()
-)
-
-data class LaptopTelemetry(
-    val isOnline: Boolean = true,
-    val isLocked: Boolean = true,
-    val deviceName: String = "Laptop Workstation"
-) {
-    val statusText: String
-        get() = when {
-            !isOnline -> "Offline"
-            isLocked -> "Online · Locked"
-            else -> "Online · Unlocked"
-        }
-}
-
-data class LightTelemetry(
-    val isOn: Boolean = true,
-    val brightnessPercent: Int = 80,
-    val colorName: String = "Crimson",
-    val label: String = "Ambient Light"
-) {
-    val statusText: String
-        get() = if (isOn) "$brightnessPercent% · $colorName" else "Off"
-}
-
-data class RelayTelemetry(
-    val isAcActive: Boolean = true,
-    val label: String = "Laptop Charger Relay"
-) {
-    val statusText: String
-        get() = if (isAcActive) "AC Active" else "AC Cut"
-}
-
-data class NetworkTelemetry(
-    val isConnected: Boolean = true,
-    val latencyMs: Int = 12
-) {
-    val statusText: String
-        get() = if (isConnected) "LAN (${latencyMs}ms)" else "No LAN"
-    val label: String
-        get() = if (isConnected) "Connected" else "Disconnected"
-}
-
-// ----------------------------------------------------------------------------
-// Telemetry Composable
-// ----------------------------------------------------------------------------
+import org.example.desky.home.presentation.model.HomeTelemetryUiState
+import org.example.desky.home.presentation.model.LaptopTelemetry
+import org.example.desky.home.presentation.model.LightTelemetry
+import org.example.desky.home.presentation.model.NetworkTelemetry
+import org.example.desky.home.presentation.model.RelayTelemetry
 
 @Composable
 fun HomeTelemetryCard(
@@ -117,7 +66,11 @@ fun HomeTelemetryCard(
                     icon = R.drawable.led_strip,
                     title = state.light.statusText,
                     subtitle = state.light.label,
-                    iconTint = if (state.light.isOn) activeColor else MaterialTheme.colorScheme.outline,
+                    iconTint = when {
+                        !state.light.isOnline -> MaterialTheme.colorScheme.outline
+                        state.light.isOn -> activeColor
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -131,7 +84,11 @@ fun HomeTelemetryCard(
                     icon = R.drawable.electricity,
                     title = state.relay.statusText,
                     subtitle = state.relay.label,
-                    iconTint = if (state.relay.isAcActive) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.outline,
+                    iconTint = when {
+                        !state.relay.isOnline -> MaterialTheme.colorScheme.outline
+                        state.relay.isAcActive -> activeColor
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -190,9 +147,6 @@ private fun TelemetryCell(
     }
 }
 
-// ----------------------------------------------------------------------------
-// Previews
-// ----------------------------------------------------------------------------
 
 @PreviewLightDark
 @Composable
@@ -220,8 +174,8 @@ fun PreviewHomeTelemetryCardDeskOff() {
             HomeTelemetryCard(
                 state = HomeTelemetryUiState(
                     laptop = LaptopTelemetry(isOnline = false),
-                    light = LightTelemetry(isOn = false),
-                    relay = RelayTelemetry(isAcActive = false)
+                    light = LightTelemetry(isOnline = true, isOn = false),
+                    relay = RelayTelemetry(isOnline = true, isAcActive = false)
                 )
             )
         }
@@ -238,6 +192,9 @@ fun PreviewHomeTelemetryCardDisconnected() {
         ) {
             HomeTelemetryCard(
                 state = HomeTelemetryUiState(
+                    laptop = LaptopTelemetry(isOnline = false),
+                    light = LightTelemetry(isOnline = false, isOn = false),
+                    relay = RelayTelemetry(isOnline = false, isAcActive = false),
                     network = NetworkTelemetry(isConnected = false)
                 )
             )

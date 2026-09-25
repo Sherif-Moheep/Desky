@@ -1,6 +1,5 @@
 package org.example.desky.home.presentation.components
 
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -10,7 +9,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import org.example.desky.core.presentation.theme.DeskyTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainTopBar(
     modifier: Modifier = Modifier
