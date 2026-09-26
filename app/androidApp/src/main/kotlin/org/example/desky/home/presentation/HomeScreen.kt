@@ -3,6 +3,7 @@ package org.example.desky.home.presentation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavKey
 import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.home.presentation.components.DeskPowerButton
@@ -37,14 +37,11 @@ import org.example.desky.home.presentation.model.HomeTelemetryUiState
 import org.example.desky.home.presentation.model.LaptopTelemetry
 import org.example.desky.home.presentation.model.LightTelemetry
 import org.example.desky.home.presentation.model.RelayTelemetry
-import org.example.desky.navigation.BottomNavBar
-import org.example.desky.navigation.Route
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    onNavigateToTab: (NavKey) -> Unit = {},
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -62,7 +59,6 @@ fun HomeScreen(
         state = state,
         onIntent = viewModel::sendIntent,
         snackbarHostState = snackbarHostState,
-        onNavigateToTab = onNavigateToTab,
         modifier = modifier
     )
 }
@@ -72,21 +68,15 @@ fun HomeScreenContent(
     state: HomeState,
     onIntent: (HomeIntent) -> Unit,
     snackbarHostState: SnackbarHostState,
-    onNavigateToTab: (NavKey) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
 
     Scaffold(
         modifier = modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             MainTopBar()
-        },
-        bottomBar = {
-            BottomNavBar(
-                selectedKey = Route.Home,
-                onSelectedKey = onNavigateToTab
-            )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
@@ -122,16 +112,16 @@ fun HomeScreenContent(
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
-            }
+        }
 
-            if (state.showPowerOffDialog) {
-                PowerOffConfirmationDialog(
-                    onConfirm = { onIntent(HomeIntent.ConfirmPowerOff) },
-                    onDismiss = { onIntent(HomeIntent.DismissPowerOffDialog) }
-                )
-            }
+        if (state.showPowerOffDialog) {
+            PowerOffConfirmationDialog(
+                onConfirm = { onIntent(HomeIntent.ConfirmPowerOff) },
+                onDismiss = { onIntent(HomeIntent.DismissPowerOffDialog) }
+            )
         }
     }
+}
 
 // ----------------------------------------------------------------------------
 // Previews
@@ -149,7 +139,6 @@ fun PreviewHomeScreenOnline() {
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNavigateToTab = {}
         )
     }
 }
@@ -170,7 +159,6 @@ fun PreviewHomeScreenBooting() {
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNavigateToTab = {}
         )
     }
 }
@@ -191,7 +179,6 @@ fun PreviewHomeScreenDeskOff() {
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNavigateToTab = {}
         )
     }
 }
@@ -207,7 +194,6 @@ fun PreviewHomeScreenWithDialog() {
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNavigateToTab = {}
         )
     }
 }

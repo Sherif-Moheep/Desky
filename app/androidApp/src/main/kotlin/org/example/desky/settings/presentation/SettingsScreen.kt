@@ -3,6 +3,7 @@ package org.example.desky.settings.presentation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,11 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavKey
 import org.example.desky.R
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.navigation.BottomNavBar
-import org.example.desky.navigation.Route
 import org.example.desky.settings.components.AppInfoCard
 import org.example.desky.settings.components.DeviceConfigCard
 import org.example.desky.settings.components.ResetSettingsDialog
@@ -41,7 +39,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    onNavigateToTab: (NavKey) -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -59,7 +56,6 @@ fun SettingsScreen(
         state = state,
         onIntent = viewModel::onIntent,
         snackbarHostState = snackbarHostState,
-        onNavigateToTab = onNavigateToTab,
         modifier = modifier
     )
 }
@@ -69,30 +65,25 @@ fun SettingsContent(
     state: SettingsState,
     onIntent: (SettingsIntent) -> Unit,
     snackbarHostState: SnackbarHostState,
-    onNavigateToTab: (NavKey) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             SettingsTopBar()
-        },
-        bottomBar = {
-            BottomNavBar(
-                selectedKey = Route.Settings,
-                onSelectedKey = onNavigateToTab,
-            )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Section: Devices & Networking
             SectionHeader(title = "Devices & Networking")
@@ -189,7 +180,6 @@ fun PreviewSettingsScreen() {
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
-            onNavigateToTab = {}
         )
     }
 }

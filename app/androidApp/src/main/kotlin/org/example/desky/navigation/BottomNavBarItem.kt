@@ -9,15 +9,15 @@ data class BottomNavBarItem (
 )
 
 val TOP_LEVEL_DESTINATIONS = mapOf(
-    Route.Home to BottomNavBarItem(
+    TopRoutes.Home to BottomNavBarItem(
         icon = R.drawable.home,
         label = "Home"
     ),
-    Route.Devices to BottomNavBarItem(
+    TopRoutes.Devices to BottomNavBarItem(
         icon = R.drawable.devices,
         label = "Devices"
     ),
-    Route.Settings to BottomNavBarItem(
+    TopRoutes.Settings to BottomNavBarItem(
         icon = R.drawable.settings,
         label = "Settings"
     )
