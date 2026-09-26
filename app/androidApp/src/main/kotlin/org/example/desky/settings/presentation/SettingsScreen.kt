@@ -1,4 +1,4 @@
-package org.example.desky.settings
+package org.example.desky.settings.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,7 +32,6 @@ import org.example.desky.settings.components.DeviceConfigCard
 import org.example.desky.settings.components.ResetSettingsDialog
 import org.example.desky.settings.components.SettingsTopBar
 import org.example.desky.settings.components.ThemeSelectorCard
-import org.example.desky.settings.presentation.SettingsViewModel
 import org.example.desky.settings.presentation.contract.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent

@@ -12,10 +12,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.desky.core.domain.model.AppThemeMode
 import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.presentation.theme.DeskyTheme
+import org.example.desky.devices.presentation.DevicesScreen
 import org.example.desky.home.presentation.HomeScreen
 import org.example.desky.laptop.presentation.LaptopDetailScreen
 import org.example.desky.led_strip.presentation.LedScreen
-import org.example.desky.settings.SettingsScreen
+import org.example.desky.settings.presentation.SettingsScreen
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
@@ -35,12 +36,19 @@ class MainActivity : ComponentActivity() {
             }
 
             DeskyTheme(darkTheme = isDarkTheme) {
-                HomeScreen(
+                LedScreen(
+                    onBackClick = {},
                     onNavigateToTab = {}
                 )
-//                SettingsScreen()
-//                LedScreen(
-//                    onBackClick = {},
+//                HomeScreen(
+//                    onNavigateToTab = {}
+//                )
+//                DevicesScreen(
+//                    onNavigateToLaptopDetail = {},
+//                    onNavigateToLedDetail = {},
+//                    onNavigateToTab = {}
+//                )
+//                SettingsScreen(
 //                    onNavigateToTab = {}
 //                )
 //                LaptopDetailScreen(

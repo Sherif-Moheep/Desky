@@ -8,7 +8,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
@@ -252,12 +254,29 @@ val unspecified_scheme = ColorFamily(
     Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
 )
 
+@Immutable
+data class StatusColors(
+    val green: Color,
+    val greenBg: Color,
+    val amber: Color,
+    val amberBg: Color
+)
+
+val LocalStatusColors = staticCompositionLocalOf {
+    StatusColors(
+        green = Color(0xFF4CAF50),
+        greenBg = Color(0xFF1B5E20).copy(alpha = 0.25f),
+        amber = Color(0xFFFFB74D),
+        amberBg = Color(0xFFE65100).copy(alpha = 0.25f)
+    )
+}
+
 @Composable
 fun DeskyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
-    content: @Composable() () -> Unit
+    content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -269,9 +288,27 @@ fun DeskyTheme(
         else -> lightScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    val statusColors = if (darkTheme) {
+        StatusColors(
+            green = Color(0xFF4CAF50),
+            greenBg = Color(0xFF1B5E20).copy(alpha = 0.25f),
+            amber = Color(0xFFFFB74D),
+            amberBg = Color(0xFFE65100).copy(alpha = 0.25f)
+        )
+    } else {
+        StatusColors(
+            green = Color(0xFF137333),
+            greenBg = Color(0xFFCEEAD6),
+            amber = Color(0xFFB06000),
+            amberBg = Color(0xFFFEEFC3)
+        )
+    }
+
+    CompositionLocalProvider(LocalStatusColors provides statusColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }

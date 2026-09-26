@@ -2,6 +2,7 @@ package org.example.desky
 
 import android.app.Application
 import org.example.desky.core.di.coreModule
+import org.example.desky.devices.di.devicesModule
 import org.example.desky.home.di.homeModule
 import org.example.desky.laptop.di.laptopModule
 import org.example.desky.led_strip.di.ledModule
@@ -18,7 +19,14 @@ class DeskyApplication : Application() {
         startKoin {
             androidLogger(Level.ERROR)
             androidContext(this@DeskyApplication)
-            modules(coreModule, homeModule, ledModule, settingsModule, laptopModule)
+            modules(
+                coreModule,
+                homeModule,
+                devicesModule,
+                ledModule,
+                settingsModule,
+                laptopModule
+            )
         }
     }
 }

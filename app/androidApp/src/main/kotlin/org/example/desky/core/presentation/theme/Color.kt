@@ -1,5 +1,6 @@
 package org.example.desky.core.presentation.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 val primaryLight = Color(0xFF01677D)
@@ -218,8 +219,19 @@ val surfaceContainerDarkHighContrast = Color(0xFF2C3133)
 val surfaceContainerHighDarkHighContrast = Color(0xFF373C3F)
 val surfaceContainerHighestDarkHighContrast = Color(0xFF42484A)
 
-// Status Colors for Badges & Indicators
-val StatusGreen = Color(0xFF4CAF50)
-val StatusGreenBg = Color(0xFF1B5E20).copy(alpha = 0.25f)
-val StatusAmber = Color(0xFFFFB74D)
-val StatusAmberBg = Color(0xFFE65100).copy(alpha = 0.25f)
+// Status Colors for Badges & Indicators (Theme-Aware: Dark & Light)
+val StatusGreen: Color
+    @Composable
+    get() = LocalStatusColors.current.green
+
+val StatusGreenBg: Color
+    @Composable
+    get() = LocalStatusColors.current.greenBg
+
+val StatusAmber: Color
+    @Composable
+    get() = LocalStatusColors.current.amber
+
+val StatusAmberBg: Color
+    @Composable
+    get() = LocalStatusColors.current.amberBg
