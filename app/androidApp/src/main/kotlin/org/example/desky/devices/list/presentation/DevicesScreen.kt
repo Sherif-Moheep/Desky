@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.devices.laptop.presentation.components.LaptopShutdownDialog
@@ -46,9 +48,16 @@ fun DevicesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
+        var snackbarJob: Job? = null
         viewModel.effect.collect { effect ->
             when (effect) {
-                is DevicesEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is DevicesEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = this@LaunchedEffect.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
+                }
             }
         }
     }
