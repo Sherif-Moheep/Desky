@@ -26,10 +26,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.desky.R
 import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.settings.components.AppInfoCard
-import org.example.desky.settings.components.DeviceConfigCard
-import org.example.desky.settings.components.ResetSettingsDialog
-import org.example.desky.settings.components.ThemeSelectorCard
+import org.example.desky.settings.presentation.components.AppInfoCard
+import org.example.desky.settings.presentation.components.DeviceConfigCard
+import org.example.desky.core.presentation.components.ConfirmationDialog
+import org.example.desky.settings.presentation.components.ThemeSelectorCard
 import org.example.desky.settings.presentation.contract.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
@@ -144,7 +144,11 @@ fun SettingsContent(
     }
 
     if (state.showResetDialog) {
-        ResetSettingsDialog(
+        ConfirmationDialog(
+            title = "Reset All Settings?",
+            message = "This will restore all device hostnames, ports, and theme preferences to their factory defaults.",
+            confirmText = "Reset Defaults",
+            iconRes = R.drawable.warning,
             onConfirm = { onIntent(SettingsIntent.ConfirmReset) },
             onDismiss = { onIntent(SettingsIntent.DismissResetDialog) }
         )

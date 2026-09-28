@@ -26,8 +26,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.core.presentation.components.TopLevelAppBar
+import org.example.desky.R
+import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.devices.laptop.presentation.components.LaptopShutdownDialog
 import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 import org.example.desky.devices.list.presentation.components.DeviceSummaryHeader
 import org.example.desky.devices.list.presentation.components.LaptopDeviceCard
@@ -150,7 +151,11 @@ fun DevicesScreenContent(
         }
 
         if (state.showLaptopShutdownDialog) {
-            LaptopShutdownDialog(
+            ConfirmationDialog(
+                title = "Shut Down Workstation?",
+                message = "Are you sure you want to turn off the laptop? Any unsaved work will be lost.",
+                confirmText = "Shut Down",
+                iconRes = R.drawable.power,
                 onConfirm = { onIntent(DevicesIntent.ConfirmLaptopShutdown) },
                 onDismiss = { onIntent(DevicesIntent.DismissLaptopShutdownDialog) }
             )

@@ -23,8 +23,10 @@ import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.devices.laptop.presentation.components.LaptopActionsRow
 import org.example.desky.devices.laptop.presentation.components.LaptopHeaderCard
-import org.example.desky.devices.laptop.presentation.components.LaptopRestartDialog
-import org.example.desky.devices.laptop.presentation.components.LaptopShutdownDialog
+import androidx.compose.material3.MaterialTheme
+import org.example.desky.R
+import org.example.desky.core.presentation.components.ConfirmationDialog
+import org.example.desky.core.presentation.theme.StatusAmber
 import org.example.desky.core.presentation.components.DetailTopAppBar
 import org.example.desky.devices.laptop.presentation.components.LaptopStatusCard
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
@@ -129,14 +131,25 @@ fun LaptopDetailScreenContent(
 
         // Confirmation Dialogs
         if (state.showShutdownDialog) {
-            LaptopShutdownDialog(
+            ConfirmationDialog(
+                title = "Shut Down Workstation?",
+                message = "Are you sure you want to turn off the laptop? Any unsaved work will be lost.",
+                confirmText = "Shut Down",
+                iconRes = R.drawable.power,
                 onConfirm = { onIntent(LaptopIntent.ConfirmShutdown) },
                 onDismiss = { onIntent(LaptopIntent.DismissShutdownDialog) }
             )
         }
 
         if (state.showRestartDialog) {
-            LaptopRestartDialog(
+            ConfirmationDialog(
+                title = "Restart Workstation?",
+                message = "Are you sure you want to reboot the system? All active applications will close.",
+                confirmText = "Restart",
+                iconRes = R.drawable.refresh,
+                iconTint = StatusAmber,
+                confirmButtonColor = StatusAmber,
+                confirmContentColor = MaterialTheme.colorScheme.surface,
                 onConfirm = { onIntent(LaptopIntent.ConfirmRestart) },
                 onDismiss = { onIntent(LaptopIntent.DismissRestartDialog) }
             )

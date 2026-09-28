@@ -1,4 +1,4 @@
-package org.example.desky.settings.components
+package org.example.desky.settings.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column

@@ -27,8 +27,9 @@ import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.home.presentation.components.DeskPowerButton
 import org.example.desky.home.presentation.components.HomeGreeting
+import org.example.desky.R
+import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.home.presentation.components.HomeTelemetryCard
-import org.example.desky.home.presentation.components.PowerOffConfirmationDialog
 import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
 import org.example.desky.home.presentation.contract.HomeState
@@ -117,7 +118,11 @@ fun HomeScreenContent(
         }
 
         if (state.showPowerOffDialog) {
-            PowerOffConfirmationDialog(
+            ConfirmationDialog(
+                title = "Power Off Desk?",
+                message = "Are you sure you want to turn off the desk? All connected systems will be powered down.",
+                confirmText = "Power Off",
+                iconRes = R.drawable.power,
                 onConfirm = { onIntent(HomeIntent.ConfirmPowerOff) },
                 onDismiss = { onIntent(HomeIntent.DismissPowerOffDialog) }
             )
