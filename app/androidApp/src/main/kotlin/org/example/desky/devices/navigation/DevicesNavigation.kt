@@ -1,5 +1,7 @@
 package org.example.desky.devices.navigation
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.modules.SerializersModule
@@ -9,18 +11,25 @@ import org.example.desky.devices.led_strip.presentation.LedScreen
 import org.example.desky.devices.list.presentation.DevicesScreen
 import org.example.desky.navigation.TopRoutes
 
+@Composable
+fun DevicesRoute(
+    onNavigate: (NavKey) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    DevicesScreen(
+        modifier = modifier,
+        onNavigateToLaptopDetail = { onNavigate(DevicesRoutes.LaptopDetail) },
+        onNavigateToLedDetail = { onNavigate(DevicesRoutes.LedDetail) }
+    )
+}
+
 fun EntryProviderScope<NavKey>.devicesNavigation(
-    navigate: (NavKey) -> Unit,
+    onNavigate: (NavKey) -> Unit,
     onBackClick: () -> Unit,
 ) {
     entry<TopRoutes.Devices>{
-        DevicesScreen(
-            onNavigateToLaptopDetail = {
-                navigate(DevicesRoutes.LaptopDetail)
-            },
-            onNavigateToLedDetail = {
-                navigate(DevicesRoutes.LedDetail)
-            }
+        DevicesRoute(
+            onNavigate = onNavigate
         )
     }
 
