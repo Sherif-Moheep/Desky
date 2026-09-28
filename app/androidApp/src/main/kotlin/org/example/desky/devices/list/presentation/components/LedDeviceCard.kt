@@ -2,7 +2,6 @@ package org.example.desky.devices.list.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -34,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
+import org.example.desky.core.presentation.components.ChipPill
 import org.example.desky.core.presentation.components.DeviceConnectionStatus
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.core.presentation.theme.StatusAmber
@@ -153,7 +151,7 @@ fun LedDeviceCard(
                 // 1. Connection Status Chip
                 when (status) {
                     is DeviceConnectionStatus.Online -> {
-                        LedChipPill(
+                        ChipPill(
                             label = "Online · ${status.latencyMs}ms",
                             dotColor = StatusGreen,
                             bgColor = StatusGreenBg,
@@ -161,7 +159,7 @@ fun LedDeviceCard(
                         )
                     }
                     is DeviceConnectionStatus.Pinging -> {
-                        LedChipPill(
+                        ChipPill(
                             label = "Connecting...",
                             dotColor = StatusAmber,
                             bgColor = StatusAmberBg,
@@ -169,7 +167,7 @@ fun LedDeviceCard(
                         )
                     }
                     is DeviceConnectionStatus.Offline -> {
-                        LedChipPill(
+                        ChipPill(
                             label = status.message.ifBlank { "Offline" },
                             dotColor = MaterialTheme.colorScheme.error,
                             bgColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
@@ -177,7 +175,7 @@ fun LedDeviceCard(
                         )
                     }
                     DeviceConnectionStatus.Idle -> {
-                        LedChipPill(
+                        ChipPill(
                             label = "Idle",
                             dotColor = MaterialTheme.colorScheme.outline,
                             bgColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -188,7 +186,7 @@ fun LedDeviceCard(
 
                 // 2. Color Chip (with live swatch preview circle)
                 if (isPoweredOn && isOnline) {
-                    LedChipPill(
+                    ChipPill(
                         label = colorName,
                         dotColor = color,
                         dotBorderColor = MaterialTheme.colorScheme.outlineVariant,
@@ -197,13 +195,13 @@ fun LedDeviceCard(
                     )
 
                     // 3. Brightness Chip
-                    LedChipPill(
+                    ChipPill(
                         label = "$brightnessPercent% Brightness",
                         bgColor = MaterialTheme.colorScheme.surfaceVariant,
                         textColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else if (!isPoweredOn) {
-                    LedChipPill(
+                    ChipPill(
                         label = "Turned Off",
                         bgColor = MaterialTheme.colorScheme.surfaceVariant,
                         textColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -237,46 +235,6 @@ fun LedDeviceCard(
     }
 }
 
-@Composable
-private fun LedChipPill(
-    label: String,
-    bgColor: Color,
-    textColor: Color,
-    dotColor: Color? = null,
-    dotBorderColor: Color? = null,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(50),
-        color = bgColor,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (dotColor != null) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(color = dotColor, shape = CircleShape)
-                        .then(
-                            if (dotBorderColor != null) {
-                                Modifier.border(0.5.dp, dotBorderColor, CircleShape)
-                            } else Modifier
-                        )
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-            }
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.Medium,
-                color = textColor
-            )
-        }
-    }
-}
 
 @PreviewLightDark
 @Composable
