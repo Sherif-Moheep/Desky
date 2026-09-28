@@ -25,8 +25,8 @@ import org.example.desky.devices.laptop.presentation.components.LaptopActionsRow
 import org.example.desky.devices.laptop.presentation.components.LaptopHeaderCard
 import org.example.desky.devices.laptop.presentation.components.LaptopRestartDialog
 import org.example.desky.devices.laptop.presentation.components.LaptopShutdownDialog
+import org.example.desky.core.presentation.components.DetailTopAppBar
 import org.example.desky.devices.laptop.presentation.components.LaptopStatusCard
-import org.example.desky.devices.laptop.presentation.components.LaptopTopBar
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
@@ -74,7 +74,10 @@ fun LaptopDetailScreenContent(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            LaptopTopBar(onBackClick = onBackClick)
+            DetailTopAppBar(
+                title = "Laptop",
+                onBackClick = onBackClick
+            )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)

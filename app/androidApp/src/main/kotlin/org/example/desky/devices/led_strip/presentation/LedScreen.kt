@@ -29,7 +29,7 @@ import org.example.desky.devices.led_strip.presentation.components.DonutColorWhe
 import org.example.desky.devices.led_strip.presentation.components.LedBrightnessSlider
 import org.example.desky.devices.led_strip.presentation.components.LedHeaderCard
 import org.example.desky.devices.led_strip.presentation.components.LedPresetsRow
-import org.example.desky.devices.led_strip.presentation.components.LedTopBar
+import org.example.desky.core.presentation.components.DetailTopAppBar
 import org.example.desky.devices.led_strip.presentation.components.PresetBottomSheet
 import org.example.desky.devices.led_strip.presentation.contract.LedEffect
 import org.example.desky.devices.led_strip.presentation.contract.LedIntent
@@ -78,7 +78,10 @@ fun LedScreenContent(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            LedTopBar(onBackClick = onBackClick)
+            DetailTopAppBar(
+                title = "LED Strip",
+                onBackClick = onBackClick
+            )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
