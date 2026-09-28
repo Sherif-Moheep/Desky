@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
 import org.example.desky.devices.laptop.presentation.LaptopDetailScreen
 import org.example.desky.devices.led_strip.presentation.LedScreen
 import org.example.desky.devices.list.presentation.DevicesScreen
@@ -47,12 +45,5 @@ fun EntryProviderScope<NavKey>.devicesNavigation(
                 onBackClick()
             }
         )
-    }
-}
-
-val devicesSerializerModule = SerializersModule {
-    polymorphic(NavKey::class) {
-        subclass(DevicesRoutes.LaptopDetail::class, DevicesRoutes.LaptopDetail.serializer())
-        subclass(DevicesRoutes.LedDetail::class, DevicesRoutes.LedDetail.serializer())
     }
 }
