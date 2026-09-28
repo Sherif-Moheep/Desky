@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.domain.model.DeviceConnectionStatus
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
+import org.example.desky.core.domain.model.PowerState
 import org.example.desky.devices.led_strip.domain.usecase.LedUseCases
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
 import org.example.desky.devices.list.presentation.contract.DevicesIntent
@@ -169,13 +169,13 @@ class DevicesViewModel(
 
     private fun handleLaptopPowerClick() {
         when (_state.value.laptopPowerState) {
-            LaptopPowerState.ON -> {
+            PowerState.ON -> {
                 _state.update { it.copy(showLaptopShutdownDialog = true) }
             }
-            LaptopPowerState.OFF -> {
+            PowerState.OFF -> {
                 _state.update {
                     it.copy(
-                        laptopPowerState = LaptopPowerState.BOOTING,
+                        laptopPowerState = PowerState.BOOTING,
                         laptopStatus = DeviceConnectionStatus.Pinging
                     )
                 }
@@ -186,14 +186,14 @@ class DevicesViewModel(
                     val status = checkSocketConnection(endpoint.host, endpoint.port)
                     _state.update {
                         it.copy(
-                            laptopPowerState = LaptopPowerState.ON,
+                            laptopPowerState = PowerState.ON,
                             laptopStatus = status
                         )
                     }
                 }
             }
-            LaptopPowerState.BOOTING,
-            LaptopPowerState.SHUTTING_DOWN -> {
+            PowerState.BOOTING,
+            PowerState.SHUTTING_DOWN -> {
                 // Ignore clicks during transitions
             }
         }
@@ -203,7 +203,7 @@ class DevicesViewModel(
         _state.update {
             it.copy(
                 showLaptopShutdownDialog = false,
-                laptopPowerState = LaptopPowerState.SHUTTING_DOWN
+                laptopPowerState = PowerState.SHUTTING_DOWN
             )
         }
         viewModelScope.launch {
@@ -211,7 +211,7 @@ class DevicesViewModel(
             delay(1200.milliseconds)
             _state.update {
                 it.copy(
-                    laptopPowerState = LaptopPowerState.OFF,
+                    laptopPowerState = PowerState.OFF,
                     laptopStatus = DeviceConnectionStatus.Offline("Powered Down")
                 )
             }

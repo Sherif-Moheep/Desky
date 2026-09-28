@@ -27,12 +27,12 @@ import androidx.compose.material3.MaterialTheme
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.core.presentation.theme.StatusAmber
+import org.example.desky.core.domain.model.PowerState
 import org.example.desky.core.presentation.components.DetailTopAppBar
 import org.example.desky.devices.laptop.presentation.components.LaptopStatusCard
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 import org.example.desky.devices.laptop.presentation.model.LaptopTelemetryState
 import org.koin.androidx.compose.koinViewModel
 
@@ -99,7 +99,7 @@ fun LaptopDetailScreenContent(
                 powerState = state.powerState,
                 status = state.connectionStatus,
                 onPowerClick = {
-                    if (state.powerState == LaptopPowerState.ON) {
+                    if (state.powerState == PowerState.ON) {
                         onIntent(LaptopIntent.RequestShutdown)
                     } else {
                         onIntent(LaptopIntent.PowerClick)
@@ -163,7 +163,7 @@ fun PreviewLaptopDetailScreenOnline() {
     DeskyTheme {
         LaptopDetailScreenContent(
             state = LaptopState(
-                powerState = LaptopPowerState.ON,
+                powerState = PowerState.ON,
                 connectionStatus = DeviceConnectionStatus.Online(12),
                 telemetry = LaptopTelemetryState(
                     isLocked = true,
@@ -185,7 +185,7 @@ fun PreviewLaptopDetailScreenOffline() {
     DeskyTheme {
         LaptopDetailScreenContent(
             state = LaptopState(
-                powerState = LaptopPowerState.OFF,
+                powerState = PowerState.OFF,
                 connectionStatus = DeviceConnectionStatus.Offline("Offline"),
                 telemetry = LaptopTelemetryState()
             ),

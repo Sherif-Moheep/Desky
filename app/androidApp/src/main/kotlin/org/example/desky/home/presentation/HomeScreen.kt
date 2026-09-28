@@ -23,17 +23,17 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.desky.core.domain.model.DeviceConnectionStatus
+import org.example.desky.core.domain.model.PowerState
+import org.example.desky.core.presentation.components.ConfirmationDialog
+import org.example.desky.core.presentation.components.PowerButton
 import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.home.presentation.components.DeskPowerButton
 import org.example.desky.home.presentation.components.HomeGreeting
 import org.example.desky.R
-import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.home.presentation.components.HomeTelemetryCard
 import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
 import org.example.desky.home.presentation.contract.HomeState
-import org.example.desky.home.presentation.model.DeskPowerState
 import org.example.desky.home.presentation.model.HomeTelemetryUiState
 import org.example.desky.home.presentation.model.LaptopTelemetry
 import org.example.desky.home.presentation.model.LightTelemetry
@@ -102,9 +102,11 @@ fun HomeScreenContent(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
-                    DeskPowerButton(
+                    PowerButton(
                         powerState = state.powerState,
-                        onToggle = { onIntent(HomeIntent.ToggleDeskPower) }
+                        onClick = { onIntent(HomeIntent.ToggleDeskPower) },
+                        size = 190.dp,
+                        statusLabelPrefix = "Desk Power: "
                     )
                 }
 
@@ -140,7 +142,7 @@ fun PreviewHomeScreenOnline() {
     DeskyTheme {
         HomeScreenContent(
             state = HomeState(
-                powerState = DeskPowerState.ON,
+                powerState = PowerState.ON,
                 connectionStatus = DeviceConnectionStatus.Online(12),
                 telemetry = HomeTelemetryUiState()
             ),
@@ -156,7 +158,7 @@ fun PreviewHomeScreenBooting() {
     DeskyTheme {
         HomeScreenContent(
             state = HomeState(
-                powerState = DeskPowerState.BOOTING,
+                powerState = PowerState.BOOTING,
                 connectionStatus = DeviceConnectionStatus.Pinging,
                 telemetry = HomeTelemetryUiState(
                     laptop = LaptopTelemetry(isOnline = false),
@@ -176,7 +178,7 @@ fun PreviewHomeScreenDeskOff() {
     DeskyTheme {
         HomeScreenContent(
             state = HomeState(
-                powerState = DeskPowerState.OFF,
+                powerState = PowerState.OFF,
                 connectionStatus = DeviceConnectionStatus.Online(12),
                 telemetry = HomeTelemetryUiState(
                     laptop = LaptopTelemetry(isOnline = false),
@@ -196,7 +198,7 @@ fun PreviewHomeScreenWithDialog() {
     DeskyTheme {
         HomeScreenContent(
             state = HomeState(
-                powerState = DeskPowerState.ON,
+                powerState = PowerState.ON,
                 showPowerOffDialog = true
             ),
             onIntent = {},

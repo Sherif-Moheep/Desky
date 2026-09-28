@@ -30,13 +30,13 @@ import androidx.compose.ui.unit.dp
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ChipPill
 import org.example.desky.core.domain.model.DeviceConnectionStatus
+import org.example.desky.core.domain.model.PowerState
+import org.example.desky.core.presentation.components.PowerButton
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.core.presentation.theme.StatusAmber
 import org.example.desky.core.presentation.theme.StatusAmberBg
 import org.example.desky.core.presentation.theme.StatusGreen
 import org.example.desky.core.presentation.theme.StatusGreenBg
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
-import org.example.desky.devices.laptop.presentation.components.LaptopPowerButton
 
 @Composable
 fun LaptopDeviceCard(
@@ -44,7 +44,7 @@ fun LaptopDeviceCard(
     port: Int,
     serverStatus: DeviceConnectionStatus,
     espStatus: DeviceConnectionStatus,
-    powerState: LaptopPowerState,
+    powerState: PowerState,
     isLocked: Boolean,
     uptime: String,
     onPowerClick: () -> Unit,
@@ -82,7 +82,7 @@ fun LaptopDeviceCard(
                         modifier = Modifier
                             .size(46.dp)
                             .background(
-                                color = if (isOnline && powerState == LaptopPowerState.ON) {
+                                color = if (isOnline && powerState == PowerState.ON) {
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                                 } else {
                                     MaterialTheme.colorScheme.surfaceVariant
@@ -94,7 +94,7 @@ fun LaptopDeviceCard(
                         Icon(
                             painter = painterResource(id = R.drawable.laptop),
                             contentDescription = "Laptop",
-                            tint = if (isOnline && powerState == LaptopPowerState.ON) {
+                            tint = if (isOnline && powerState == PowerState.ON) {
                                 MaterialTheme.colorScheme.primary
                             } else {
                                 MaterialTheme.colorScheme.outline
@@ -121,10 +121,16 @@ fun LaptopDeviceCard(
                     }
                 }
 
-                LaptopPowerButton(
+                PowerButton(
                     powerState = powerState,
                     onClick = onPowerClick,
-                    size = 42.dp
+                    size = 42.dp,
+                    contentDescription = when (powerState) {
+                        PowerState.ON -> "Shut Down Laptop"
+                        PowerState.OFF -> "Turn ON Laptop"
+                        PowerState.BOOTING -> "Booting..."
+                        PowerState.SHUTTING_DOWN -> "Shutting Down..."
+                    }
                 )
             }
 
@@ -156,7 +162,7 @@ fun LaptopDeviceCard(
                     }
                     is DeviceConnectionStatus.Offline -> {
                         ChipPill(
-                            label = if (powerState == LaptopPowerState.OFF) "Server: Offline" else "Server: Unreachable",
+                            label = if (powerState == PowerState.OFF) "Server: Offline" else "Server: Unreachable",
                             dotColor = MaterialTheme.colorScheme.error,
                             bgColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
                             textColor = MaterialTheme.colorScheme.error
@@ -209,7 +215,7 @@ fun LaptopDeviceCard(
                 }
 
                 // 3. Session Status Chip
-                if (powerState == LaptopPowerState.ON) {
+                if (powerState == PowerState.ON) {
                     ChipPill(
                         label = if (isLocked) "Locked" else "Unlocked",
                         bgColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -261,7 +267,7 @@ fun PreviewLaptopDeviceCard() {
                 port = 8080,
                 serverStatus = DeviceConnectionStatus.Online(12),
                 espStatus = DeviceConnectionStatus.Online(8),
-                powerState = LaptopPowerState.ON,
+                powerState = PowerState.ON,
                 isLocked = true,
                 uptime = "3h 42m",
                 onPowerClick = {},
@@ -273,7 +279,7 @@ fun PreviewLaptopDeviceCard() {
                 port = 8080,
                 serverStatus = DeviceConnectionStatus.Offline("Offline"),
                 espStatus = DeviceConnectionStatus.Online(9),
-                powerState = LaptopPowerState.OFF,
+                powerState = PowerState.OFF,
                 isLocked = false,
                 uptime = "0m",
                 onPowerClick = {},

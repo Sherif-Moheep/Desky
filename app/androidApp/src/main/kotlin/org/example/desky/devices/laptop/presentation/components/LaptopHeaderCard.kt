@@ -33,13 +33,14 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
 import org.example.desky.core.domain.model.DeviceConnectionStatus
+import org.example.desky.core.domain.model.PowerState
+import org.example.desky.core.presentation.components.PowerButton
 import org.example.desky.core.presentation.components.StatusBadge
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 
 @Composable
 fun LaptopHeaderCard(
-    powerState: LaptopPowerState,
+    powerState: PowerState,
     status: DeviceConnectionStatus,
     onPowerClick: () -> Unit,
     onRetryConnection: () -> Unit,
@@ -120,9 +121,15 @@ fun LaptopHeaderCard(
                     }
                 }
 
-                LaptopPowerButton(
+                PowerButton(
                     powerState = powerState,
-                    onClick = onPowerClick
+                    onClick = onPowerClick,
+                    contentDescription = when (powerState) {
+                        PowerState.ON -> "Shut Down Laptop"
+                        PowerState.OFF -> "Turn ON Laptop"
+                        PowerState.BOOTING -> "Booting..."
+                        PowerState.SHUTTING_DOWN -> "Shutting Down..."
+                    }
                 )
             }
         }
@@ -132,29 +139,29 @@ fun LaptopHeaderCard(
 @PreviewLightDark
 @Composable
 fun PreviewLaptopHeaderCard() {
-    var powerState by remember { mutableStateOf(LaptopPowerState.ON) }
+    var powerState by remember { mutableStateOf(PowerState.ON) }
 
     DeskyTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             LaptopHeaderCard(
                 powerState = powerState,
                 onPowerClick = {
-                    powerState = if (powerState == LaptopPowerState.ON) LaptopPowerState.OFF else LaptopPowerState.ON
+                    powerState = if (powerState == PowerState.ON) PowerState.OFF else PowerState.ON
                 },
                 status = DeviceConnectionStatus.Online(12),
                 onRetryConnection = {},
             )
             Spacer(modifier = Modifier.size(12.dp))
             LaptopHeaderCard(
-                powerState = LaptopPowerState.BOOTING,
+                powerState = PowerState.BOOTING,
                 onPowerClick = {},
                 status = DeviceConnectionStatus.Pinging,
                 onRetryConnection = {},
             )
             Spacer(modifier = Modifier.size(12.dp))
             LaptopHeaderCard(
-                powerState = LaptopPowerState.OFF,
-                onPowerClick = { powerState = LaptopPowerState.BOOTING },
+                powerState = PowerState.OFF,
+                onPowerClick = { powerState = PowerState.BOOTING },
                 status = DeviceConnectionStatus.Offline("Offline"),
                 onRetryConnection = {},
             )

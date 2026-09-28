@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
+import org.example.desky.core.domain.model.PowerState
 import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
 import org.example.desky.home.presentation.contract.HomeState
-import org.example.desky.home.presentation.model.DeskPowerState
 import org.example.desky.home.presentation.model.HomeTelemetryUiState
 
 class HomeViewModel : ViewModel() {
@@ -38,14 +38,14 @@ class HomeViewModel : ViewModel() {
 
     private fun handleToggleDeskPower() {
         when (_state.value.powerState) {
-            DeskPowerState.ON -> {
+            PowerState.ON -> {
                 _state.update { it.copy(showPowerOffDialog = true) }
             }
-            DeskPowerState.OFF -> {
+            PowerState.OFF -> {
                 handlePowerOn()
             }
-            DeskPowerState.BOOTING,
-            DeskPowerState.SHUTTING_DOWN -> {
+            PowerState.BOOTING,
+            PowerState.SHUTTING_DOWN -> {
                 // Ignore clicks during transitional states
             }
         }
@@ -54,7 +54,7 @@ class HomeViewModel : ViewModel() {
     private fun handlePowerOn() {
         _state.update {
             it.copy(
-                powerState = DeskPowerState.BOOTING,
+                powerState = PowerState.BOOTING,
                 connectionStatus = DeviceConnectionStatus.Pinging
             )
         }
@@ -64,7 +64,7 @@ class HomeViewModel : ViewModel() {
             delay(1800)
             _state.update {
                 it.copy(
-                    powerState = DeskPowerState.ON,
+                    powerState = PowerState.ON,
                     connectionStatus = DeviceConnectionStatus.Online(12),
                     telemetry = it.telemetry.copy(
                         laptop = it.telemetry.laptop.copy(isOnline = true, isLocked = false),
@@ -81,7 +81,7 @@ class HomeViewModel : ViewModel() {
         _state.update {
             it.copy(
                 showPowerOffDialog = false,
-                powerState = DeskPowerState.SHUTTING_DOWN
+                powerState = PowerState.SHUTTING_DOWN
             )
         }
         viewModelScope.launch {
@@ -90,7 +90,7 @@ class HomeViewModel : ViewModel() {
             delay(1500)
             _state.update {
                 it.copy(
-                    powerState = DeskPowerState.OFF,
+                    powerState = PowerState.OFF,
                     connectionStatus = DeviceConnectionStatus.Online(12),
                     telemetry = it.telemetry.copy(
                         laptop = it.telemetry.laptop.copy(isOnline = false),

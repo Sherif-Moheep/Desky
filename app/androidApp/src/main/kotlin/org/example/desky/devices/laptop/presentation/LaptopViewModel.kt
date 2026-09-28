@@ -11,10 +11,10 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
+import org.example.desky.core.domain.model.PowerState
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 
 class LaptopViewModel : ViewModel() {
 
@@ -42,13 +42,13 @@ class LaptopViewModel : ViewModel() {
 
     private fun handlePowerClick() {
         when (_state.value.powerState) {
-            LaptopPowerState.ON -> {
+            PowerState.ON -> {
                 _state.update { it.copy(showShutdownDialog = true) }
             }
-            LaptopPowerState.OFF -> {
+            PowerState.OFF -> {
                 _state.update {
                     it.copy(
-                        powerState = LaptopPowerState.BOOTING,
+                        powerState = PowerState.BOOTING,
                         connectionStatus = DeviceConnectionStatus.Pinging
                     )
                 }
@@ -57,8 +57,8 @@ class LaptopViewModel : ViewModel() {
                     // TODO: Wire to domain layer (ESP32 relay pulse & polling status)
                 }
             }
-            LaptopPowerState.BOOTING,
-            LaptopPowerState.SHUTTING_DOWN -> {
+            PowerState.BOOTING,
+            PowerState.SHUTTING_DOWN -> {
                 // Ignore clicks during transitional states
             }
         }
@@ -72,7 +72,7 @@ class LaptopViewModel : ViewModel() {
         _state.update {
             it.copy(
                 showShutdownDialog = false,
-                powerState = LaptopPowerState.SHUTTING_DOWN
+                powerState = PowerState.SHUTTING_DOWN
             )
         }
         viewModelScope.launch {
@@ -80,7 +80,7 @@ class LaptopViewModel : ViewModel() {
             // TODO: Wire to domain layer (Laptop Ktor server /shutdown & ESP relay off)
             _state.update {
                 it.copy(
-                    powerState = LaptopPowerState.OFF,
+                    powerState = PowerState.OFF,
                     connectionStatus = DeviceConnectionStatus.Offline("Offline")
                 )
             }

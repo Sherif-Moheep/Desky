@@ -2,14 +2,14 @@ package org.example.desky.devices.list.presentation.contract
 
 import androidx.compose.ui.graphics.Color
 import org.example.desky.core.domain.model.DeviceConnectionStatus
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
+import org.example.desky.core.domain.model.PowerState
 
 data class DevicesState(
     // Laptop state
     val laptopHost: String = "desky-laptop.local",
     val laptopPort: Int = 8080,
     val laptopStatus: DeviceConnectionStatus = DeviceConnectionStatus.Idle,
-    val laptopPowerState: LaptopPowerState = LaptopPowerState.ON,
+    val laptopPowerState: PowerState = PowerState.ON,
     val isLaptopLocked: Boolean = true,
     val laptopUptime: String = "3h 42m",
     val showLaptopShutdownDialog: Boolean = false,

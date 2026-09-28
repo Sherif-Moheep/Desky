@@ -12,14 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import org.example.desky.core.domain.model.PowerState
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.home.presentation.model.DeskPowerState
 import org.example.desky.home.presentation.model.getGreetingContent
 import java.util.Calendar
 
 @Composable
 fun HomeGreeting(
-    powerState: DeskPowerState,
+    powerState: PowerState,
     modifier: Modifier = Modifier,
     hour: Int = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
 ) {
@@ -53,13 +53,13 @@ fun HomeGreeting(
 fun PreviewAllGreetingStates() {
     DeskyTheme {
         Column(modifier = Modifier.padding(16.dp)) {
-            HomeGreeting(powerState = DeskPowerState.ON, hour = 8)
+            HomeGreeting(powerState = PowerState.ON, hour = 8)
             Spacer(modifier = Modifier.height(24.dp))
-            HomeGreeting(powerState = DeskPowerState.BOOTING)
+            HomeGreeting(powerState = PowerState.BOOTING)
             Spacer(modifier = Modifier.height(24.dp))
-            HomeGreeting(powerState = DeskPowerState.SHUTTING_DOWN)
+            HomeGreeting(powerState = PowerState.SHUTTING_DOWN)
             Spacer(modifier = Modifier.height(24.dp))
-            HomeGreeting(powerState = DeskPowerState.OFF)
+            HomeGreeting(powerState = PowerState.OFF)
         }
     }
 }

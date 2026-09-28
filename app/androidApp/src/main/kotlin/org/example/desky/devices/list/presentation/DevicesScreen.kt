@@ -29,7 +29,7 @@ import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.core.presentation.theme.DeskyTheme
-import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
+import org.example.desky.core.domain.model.PowerState
 import org.example.desky.devices.list.presentation.components.DeviceSummaryHeader
 import org.example.desky.devices.list.presentation.components.LaptopDeviceCard
 import org.example.desky.devices.list.presentation.components.LedDeviceCard
@@ -177,7 +177,7 @@ fun PreviewDevicesScreenAllOnline() {
                 laptopPort = 8080,
                 laptopStatus = DeviceConnectionStatus.Online(12),
                 espStatus = DeviceConnectionStatus.Online(8),
-                laptopPowerState = LaptopPowerState.ON,
+                laptopPowerState = PowerState.ON,
                 isLaptopLocked = true,
                 laptopUptime = "3h 42m",
                 ledHost = "192.168.1.150",
@@ -206,7 +206,7 @@ fun PreviewDevicesScreenOneOffline() {
                 laptopPort = 8080,
                 laptopStatus = DeviceConnectionStatus.Offline("Offline"),
                 espStatus = DeviceConnectionStatus.Online(8),
-                laptopPowerState = LaptopPowerState.OFF,
+                laptopPowerState = PowerState.OFF,
                 isLaptopLocked = false,
                 laptopUptime = "0m",
                 ledHost = "192.168.1.150",
