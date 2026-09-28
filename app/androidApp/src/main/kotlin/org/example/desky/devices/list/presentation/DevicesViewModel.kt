@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.example.desky.core.domain.repository.SettingsRepository
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 import org.example.desky.devices.led_strip.domain.usecase.LedUseCases
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
@@ -128,7 +128,7 @@ class DevicesViewModel(
                 val onlineCount = (if (laptopStatus is DeviceConnectionStatus.Online) 1 else 0) +
                         (if (espStatus is DeviceConnectionStatus.Online) 1 else 0) +
                         (if (ledStatus is DeviceConnectionStatus.Online) 1 else 0)
-                _effect.send(DevicesEffect.ShowSnackbar("Scan complete · $onlineCount endpoints reachable"))
+                _effect.send(DevicesEffect.ShowSnackbar("Scan complete - $onlineCount endpoints reachable"))
             }
         }
     }
@@ -180,7 +180,7 @@ class DevicesViewModel(
                     )
                 }
                 viewModelScope.launch {
-                    _effect.send(DevicesEffect.ShowSnackbar("Relay triggered — starting workstation..."))
+                    _effect.send(DevicesEffect.ShowSnackbar("Relay triggered - starting workstation..."))
                     delay(1800.milliseconds)
                     val endpoint = settingsRepository.laptopEndpointFlow.first()
                     val status = checkSocketConnection(endpoint.host, endpoint.port)

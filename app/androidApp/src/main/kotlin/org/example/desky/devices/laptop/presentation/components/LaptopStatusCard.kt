@@ -100,7 +100,7 @@ fun LaptopStatusCard(
                 // 1. SESSION
                 StatusMetricColumn(
                     label = "SESSION",
-                    value = if (isOnline) (if (telemetry.isLocked) "Locked" else "Unlocked") else "—",
+                    value = if (isOnline) (if (telemetry.isLocked) "Locked" else "Unlocked") else "--",
                     iconRes = if (telemetry.isLocked) R.drawable.lock else R.drawable.lock_open,
                     iconTint = sessionTint,
                     modifier = Modifier.weight(1f)
@@ -114,7 +114,7 @@ fun LaptopStatusCard(
                 // 2. POWER
                 StatusMetricColumn(
                     label = "POWER",
-                    value = if (isOnline) "${telemetry.batteryPercent}% ${if (telemetry.isAcConnected) "AC" else "Bat"}" else "—",
+                    value = if (isOnline) "${telemetry.batteryPercent}% ${if (telemetry.isAcConnected) "AC" else "Bat"}" else "--",
                     iconRes = batteryIconRes,
                     iconTint = powerTint,
                     modifier = Modifier.weight(1f)
@@ -128,7 +128,7 @@ fun LaptopStatusCard(
                 // 3. UPTIME
                 StatusMetricColumn(
                     label = "UPTIME",
-                    value = if (isOnline) telemetry.uptimeFormatted else "—",
+                    value = if (isOnline) telemetry.uptimeFormatted else "--",
                     iconRes = R.drawable.timer,
                     iconTint = if (isOnline) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
                     modifier = Modifier.weight(1f)

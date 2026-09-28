@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.example.desky.core.domain.repository.SettingsRepository
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.devices.led_strip.data.datasource.MagicHomeDiscoveryDataSource
 import org.example.desky.devices.led_strip.data.datasource.MagicHomeSocketDataSource
 import org.example.desky.devices.led_strip.domain.model.LedDeviceState

@@ -1,7 +1,7 @@
 package org.example.desky.devices.list.presentation.contract
 
 import androidx.compose.ui.graphics.Color
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 
 data class DevicesState(

@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.devices.led_strip.domain.usecase.LedUseCases
 import org.example.desky.devices.led_strip.presentation.contract.LedEffect
 import org.example.desky.devices.led_strip.presentation.contract.LedIntent

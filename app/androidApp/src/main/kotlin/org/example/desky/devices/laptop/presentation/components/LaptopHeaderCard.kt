@@ -32,7 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.presentation.components.StatusBadge
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.devices.laptop.presentation.model.LaptopPowerState

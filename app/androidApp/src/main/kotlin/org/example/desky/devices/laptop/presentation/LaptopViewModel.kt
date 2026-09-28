@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
@@ -53,7 +53,7 @@ class LaptopViewModel : ViewModel() {
                     )
                 }
                 viewModelScope.launch {
-                    _effect.send(LaptopEffect.ShowSnackbar("Relay triggered — starting workstation..."))
+                    _effect.send(LaptopEffect.ShowSnackbar("Relay triggered - starting workstation..."))
                     // TODO: Wire to domain layer (ESP32 relay pulse & polling status)
                 }
             }

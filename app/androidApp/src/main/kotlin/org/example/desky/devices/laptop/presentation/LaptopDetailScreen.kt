@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.devices.laptop.presentation.components.LaptopActionsRow
 import org.example.desky.devices.laptop.presentation.components.LaptopHeaderCard

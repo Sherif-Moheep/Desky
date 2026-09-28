@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ChipPill
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.core.presentation.theme.StatusAmber
 import org.example.desky.core.presentation.theme.StatusAmberBg

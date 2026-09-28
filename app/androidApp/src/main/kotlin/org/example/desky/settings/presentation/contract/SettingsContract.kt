@@ -1,6 +1,6 @@
 package org.example.desky.settings.presentation.contract
 
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.AppThemeMode
 
 enum class DeviceType {

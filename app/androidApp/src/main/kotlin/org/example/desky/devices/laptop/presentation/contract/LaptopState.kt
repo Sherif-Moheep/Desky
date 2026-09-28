@@ -1,6 +1,6 @@
 package org.example.desky.devices.laptop.presentation.contract
 
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 import org.example.desky.devices.laptop.presentation.model.LaptopTelemetryState
 

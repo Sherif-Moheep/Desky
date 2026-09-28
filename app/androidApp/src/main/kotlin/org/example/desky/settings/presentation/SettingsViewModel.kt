@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.AppSettings
 import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.settings.presentation.contract.DeviceType

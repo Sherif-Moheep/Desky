@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ConfirmationDialog

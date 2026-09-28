@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
 import org.example.desky.home.presentation.contract.HomeState
@@ -59,7 +59,7 @@ class HomeViewModel : ViewModel() {
             )
         }
         viewModelScope.launch {
-            _effect.send(HomeEffect.ShowSnackbar("Relay triggered — starting desk setup..."))
+            _effect.send(HomeEffect.ShowSnackbar("Relay triggered - starting desk setup..."))
             // Simulate / future wire to domain layer (ESP32 relay pulse & polling status)
             delay(1800)
             _state.update {
@@ -73,7 +73,7 @@ class HomeViewModel : ViewModel() {
                     )
                 )
             }
-            _effect.send(HomeEffect.ShowSnackbar("Desk power ON — workstation & peripherals ready"))
+            _effect.send(HomeEffect.ShowSnackbar("Desk power ON - workstation & peripherals ready"))
         }
     }
 
