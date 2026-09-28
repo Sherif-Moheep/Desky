@@ -3,7 +3,6 @@ package org.example.desky.devices.list.presentation
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -15,16 +14,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
+import org.example.desky.core.util.checkSocketConnection
 import org.example.desky.devices.led_strip.domain.usecase.LedUseCases
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
 import org.example.desky.devices.list.presentation.contract.DevicesIntent
 import org.example.desky.devices.list.presentation.contract.DevicesState
-import java.net.InetSocketAddress
-import java.net.Socket
 import kotlin.time.Duration.Companion.milliseconds
 
 class DevicesViewModel(
@@ -96,13 +93,13 @@ class DevicesViewModel(
             val laptopDef = async {
                 val endpoint = settingsRepository.laptopEndpointFlow.first()
                 _state.update { it.copy(laptopHost = endpoint.host, laptopPort = endpoint.port) }
-                checkSocketConnection(endpoint.host, endpoint.port)
+                checkSocketConnection(endpoint)
             }
 
             val espDef = async {
                 val endpoint = settingsRepository.espEndpointFlow.first()
                 _state.update { it.copy(espHost = endpoint.host, espPort = endpoint.port) }
-                checkSocketConnection(endpoint.host, endpoint.port)
+                checkSocketConnection(endpoint)
             }
 
             val ledDef = async {
@@ -129,22 +126,6 @@ class DevicesViewModel(
                         (if (espStatus is DeviceConnectionStatus.Online) 1 else 0) +
                         (if (ledStatus is DeviceConnectionStatus.Online) 1 else 0)
                 _effect.send(DevicesEffect.ShowSnackbar("Scan complete - $onlineCount endpoints reachable"))
-            }
-        }
-    }
-
-    private suspend fun checkSocketConnection(host: String, port: Int): DeviceConnectionStatus {
-        if (host.isBlank()) return DeviceConnectionStatus.Offline("Host empty")
-        return withContext(Dispatchers.IO) {
-            val startTime = System.currentTimeMillis()
-            try {
-                Socket().use { socket ->
-                    socket.connect(InetSocketAddress(host, port), 2000)
-                }
-                val latency = (System.currentTimeMillis() - startTime).coerceAtLeast(1)
-                DeviceConnectionStatus.Online(latency)
-            } catch (e: Exception) {
-                DeviceConnectionStatus.Offline(e.localizedMessage?.take(25) ?: "Unreachable")
             }
         }
     }
@@ -183,7 +164,7 @@ class DevicesViewModel(
                     _effect.send(DevicesEffect.ShowSnackbar("Relay triggered - starting workstation..."))
                     delay(1800.milliseconds)
                     val endpoint = settingsRepository.laptopEndpointFlow.first()
-                    val status = checkSocketConnection(endpoint.host, endpoint.port)
+                    val status = checkSocketConnection(endpoint)
                     _state.update {
                         it.copy(
                             laptopPowerState = PowerState.ON,

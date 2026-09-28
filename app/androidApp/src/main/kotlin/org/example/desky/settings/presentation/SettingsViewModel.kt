@@ -2,7 +2,6 @@ package org.example.desky.settings.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -14,16 +13,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.AppSettings
 import org.example.desky.core.domain.repository.SettingsRepository
+import org.example.desky.core.util.checkSocketConnection
 import org.example.desky.settings.presentation.contract.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
 import org.example.desky.settings.presentation.contract.SettingsState
-import java.net.InetSocketAddress
-import java.net.Socket
 import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsViewModel(
@@ -134,33 +131,13 @@ class SettingsViewModel(
                 }
             }
 
-            val status = checkConnection(host, port)
+            val status = checkSocketConnection(host, port)
             _state.update {
                 when (device) {
                     DeviceType.ESP_RELAY -> it.copy(espStatus = status)
                     DeviceType.LAPTOP -> it.copy(laptopStatus = status)
                     DeviceType.LED_STRIP -> it.copy(ledStatus = status)
                 }
-            }
-        }
-    }
-
-    private suspend fun checkConnection(
-        host: String,
-        port: Int
-    )
-    : DeviceConnectionStatus {
-        if (host.isBlank()) return DeviceConnectionStatus.Offline("Host empty")
-        return withContext(Dispatchers.IO) {
-            val startTime = System.currentTimeMillis()
-            try {
-                Socket().use { socket ->
-                    socket.connect(InetSocketAddress(host, port), 2000)
-                }
-                val latency = (System.currentTimeMillis() - startTime).coerceAtLeast(1)
-                DeviceConnectionStatus.Online(latency)
-            } catch (e: Exception) {
-                DeviceConnectionStatus.Offline(e.localizedMessage?.take(25) ?: "Unreachable")
             }
         }
     }
