@@ -24,11 +24,11 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.desky.R
+import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.settings.components.AppInfoCard
 import org.example.desky.settings.components.DeviceConfigCard
 import org.example.desky.settings.components.ResetSettingsDialog
-import org.example.desky.settings.components.SettingsTopBar
 import org.example.desky.settings.components.ThemeSelectorCard
 import org.example.desky.settings.presentation.contract.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
@@ -71,7 +71,7 @@ fun SettingsContent(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            SettingsTopBar()
+            TopLevelAppBar("Settings")
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)

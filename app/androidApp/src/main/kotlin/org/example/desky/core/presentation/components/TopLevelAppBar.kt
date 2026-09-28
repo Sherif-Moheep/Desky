@@ -1,4 +1,4 @@
-package org.example.desky.devices.list.presentation.components
+package org.example.desky.core.presentation.components
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -10,14 +10,15 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import org.example.desky.core.presentation.theme.DeskyTheme
 
 @Composable
-fun DevicesTopBar(
+fun TopLevelAppBar(
+    title: String,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
         modifier = modifier,
         title = {
             Text(
-                text = "Devices",
+                text = title,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold
             )
@@ -27,8 +28,10 @@ fun DevicesTopBar(
 
 @PreviewLightDark
 @Composable
-fun PreviewDevicesTopBar() {
+fun PreviewTopLevelAppBar() {
     DeskyTheme {
-        DevicesTopBar()
+        TopLevelAppBar(
+            title = "Desky"
+        )
     }
 }

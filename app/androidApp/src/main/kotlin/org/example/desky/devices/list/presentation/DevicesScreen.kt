@@ -25,11 +25,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.devices.laptop.presentation.components.LaptopShutdownDialog
 import org.example.desky.devices.laptop.presentation.model.LaptopPowerState
 import org.example.desky.devices.list.presentation.components.DeviceSummaryHeader
-import org.example.desky.devices.list.presentation.components.DevicesTopBar
 import org.example.desky.devices.list.presentation.components.LaptopDeviceCard
 import org.example.desky.devices.list.presentation.components.LedDeviceCard
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
@@ -87,7 +87,7 @@ fun DevicesScreenContent(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            DevicesTopBar()
+            TopLevelAppBar("Devices")
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)

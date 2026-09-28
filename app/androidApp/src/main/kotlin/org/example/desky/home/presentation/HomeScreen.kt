@@ -23,11 +23,11 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.desky.core.presentation.components.DeviceConnectionStatus
+import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.home.presentation.components.DeskPowerButton
 import org.example.desky.home.presentation.components.HomeGreeting
 import org.example.desky.home.presentation.components.HomeTelemetryCard
-import org.example.desky.home.presentation.components.MainTopBar
 import org.example.desky.home.presentation.components.PowerOffConfirmationDialog
 import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
@@ -76,7 +76,9 @@ fun HomeScreenContent(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
-            MainTopBar()
+            TopLevelAppBar(
+                "Desky"
+            )
         },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
