@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
 import org.example.desky.core.presentation.components.ConfirmationDialog
@@ -49,9 +53,16 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
+        var snackbarJob: Job? = null
         viewModel.effect.collect { effect ->
             when (effect) {
-                is HomeEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is HomeEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = this.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
+                }
             }
         }
     }
@@ -64,6 +75,7 @@ fun HomeScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreenContent(
     state: HomeState,
@@ -85,13 +97,19 @@ fun HomeScreenContent(
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { onIntent(HomeIntent.RefreshTelemetry) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(scrollState)
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState)
+            ) {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 HomeGreeting(powerState = state.powerState)
@@ -117,6 +135,7 @@ fun HomeScreenContent(
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
+            }
         }
 
         if (state.showPowerOffDialog) {

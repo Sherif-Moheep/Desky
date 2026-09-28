@@ -1,0 +1,201 @@
+package org.example.desky.devices.led.presentation
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import org.example.desky.R
+import org.example.desky.core.presentation.theme.DeskyTheme
+import org.example.desky.devices.led.presentation.components.DonutColorWheel
+import org.example.desky.devices.led.presentation.components.LedBrightnessSlider
+import org.example.desky.devices.led.presentation.components.LedHeaderCard
+import org.example.desky.devices.led.presentation.components.LedPresetsRow
+import org.example.desky.core.presentation.components.DetailTopAppBar
+import org.example.desky.devices.led.presentation.components.PresetBottomSheet
+import org.example.desky.devices.led.presentation.contract.LedEffect
+import org.example.desky.devices.led.presentation.contract.LedIntent
+import org.example.desky.devices.led.presentation.contract.LedState
+import org.example.desky.devices.led.presentation.model.PreviewLedPresets
+import org.example.desky.devices.led.presentation.model.PresetSheetMode
+import org.koin.androidx.compose.koinViewModel
+
+@Composable
+fun LedScreen(
+    modifier: Modifier = Modifier,
+    onBackClick: () -> Unit,
+    viewModel: LedViewModel = koinViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel) {
+        var snackbarJob: Job? = null
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is LedEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = this.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
+
+                }
+            }
+        }
+    }
+
+    LedScreenContent(
+        state = state,
+        onIntent = viewModel::sendIntent,
+        snackbarHostState = snackbarHostState,
+        onBackClick = onBackClick,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun LedScreenContent(
+    state: LedState,
+    onIntent: (LedIntent) -> Unit,
+    snackbarHostState: SnackbarHostState,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+
+    Scaffold(
+        modifier = modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            DetailTopAppBar(
+                title = "LED Strip",
+                onBackClick = onBackClick
+            )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
+        }
+    ) { innerPadding ->
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { onIntent(LedIntent.Refresh) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 1. Device Header Card (Identity, Status Badge & Power Switch)
+                LedHeaderCard(
+                    isOn = state.isOn,
+                    onTogglePower = { onIntent(LedIntent.TogglePower(it)) },
+                    status = state.connectionStatus,
+                    name = "Desk Backlight",
+                    iconRes = R.drawable.led_strip
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 2. Interactive Donut Color Wheel
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    DonutColorWheel(
+                        selectedColor = state.selectedColor,
+                        onColorChange = { onIntent(LedIntent.ChangeColor(it)) },
+                        enabled = state.isOn,
+                        modifier = Modifier.size(300.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 3. Brightness Slider
+                LedBrightnessSlider(
+                    brightness = state.brightness,
+                    onBrightnessChange = { onIntent(LedIntent.ChangeBrightness(it)) },
+                    enabled = state.isOn
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 4. Presets Row (Tap to apply, Long-press to edit/delete, "+" to create)
+                LedPresetsRow(
+                    presets = state.presets,
+                    selectedColor = state.selectedColor,
+                    onPresetSelect = { preset ->
+                        onIntent(LedIntent.SelectPreset(preset))
+                    },
+                    onAddPresetClick = {
+                        onIntent(LedIntent.OpenSheet(PresetSheetMode.Create))
+                    },
+                    onPresetLongClick = { preset ->
+                        onIntent(LedIntent.OpenSheet(PresetSheetMode.Edit(preset)))
+                    },
+                    enabled = state.isOn
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+
+        // Customization Modal Bottom Sheet
+        state.activeSheetMode?.let { mode ->
+            PresetBottomSheet(
+                mode = mode,
+                onDismiss = { onIntent(LedIntent.DismissSheet) },
+                onSavePreset = { onIntent(LedIntent.SavePreset(it)) },
+                onDeletePreset = { onIntent(LedIntent.DeletePreset(it)) },
+                currentColor = state.selectedColor,
+                currentBrightness = state.brightness
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+fun PreviewLedScreen() {
+    DeskyTheme {
+        LedScreenContent(
+            state = LedState(
+                isOn = true,
+                presets = PreviewLedPresets,
+                brightness = .85f
+            ),
+            onIntent = {},
+            snackbarHostState = remember { SnackbarHostState() },
+            onBackClick = {},
+        )
+    }
+}

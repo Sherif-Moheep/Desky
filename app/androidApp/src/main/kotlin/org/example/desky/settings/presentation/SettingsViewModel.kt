@@ -3,6 +3,7 @@ package org.example.desky.settings.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -17,7 +18,7 @@ import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.AppSettings
 import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.util.checkSocketConnection
-import org.example.desky.settings.presentation.contract.DeviceType
+import org.example.desky.settings.presentation.model.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
 import org.example.desky.settings.presentation.contract.SettingsState
@@ -87,6 +88,9 @@ class SettingsViewModel(
             is SettingsIntent.PingDevice -> {
                 pingDevice(intent.device)
             }
+            is SettingsIntent.PingAllDevices -> {
+                pingAllDevices()
+            }
             is SettingsIntent.ShowResetDialog -> {
                 _state.update { it.copy(showResetDialog = true) }
             }
@@ -142,6 +146,47 @@ class SettingsViewModel(
         }
     }
 
+    private fun pingAllDevices() {
+        viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isRefreshing = true,
+                    espStatus = DeviceConnectionStatus.Pinging,
+                    laptopStatus = DeviceConnectionStatus.Pinging,
+                    ledStatus = DeviceConnectionStatus.Pinging
+                )
+            }
+
+            val current = _state.value
+            val espHost = current.espHost
+            val espPort = current.espPort.toIntOrNull() ?: 80
+            val laptopHost = current.laptopHost
+            val laptopPort = current.laptopPort.toIntOrNull() ?: 8080
+            val ledHost = current.ledHost
+            val ledPort = current.ledPort.toIntOrNull() ?: 5577
+
+            val espDeferred = async { checkSocketConnection(espHost, espPort) }
+            val laptopDeferred = async { checkSocketConnection(laptopHost, laptopPort) }
+            val ledDeferred = async { checkSocketConnection(ledHost, ledPort) }
+
+            val espStatus = espDeferred.await()
+            val laptopStatus = laptopDeferred.await()
+            val ledStatus = ledDeferred.await()
+
+            _state.update {
+                it.copy(
+                    espStatus = espStatus,
+                    laptopStatus = laptopStatus,
+                    ledStatus = ledStatus,
+                    isRefreshing = false
+                )
+            }
+
+            val onlineCount = listOf(espStatus, laptopStatus, ledStatus).count { it is DeviceConnectionStatus.Online }
+            _effect.send(SettingsEffect.ShowSnackbar("Pinged all devices: $onlineCount/3 reachable"))
+        }
+    }
+
     private fun resetSettings() {
         viewModelScope.launch {
             settingsRepository.resetToDefaults()
@@ -158,7 +203,8 @@ class SettingsViewModel(
                     ledPort = defaults.ledStrip.port.toString(),
                     ledStatus = DeviceConnectionStatus.Idle,
                     themeMode = defaults.themeMode,
-                    showResetDialog = false
+                    showResetDialog = false,
+                    isRefreshing = false
                 )
             }
             _effect.send(SettingsEffect.ShowSnackbar("Settings restored to defaults"))

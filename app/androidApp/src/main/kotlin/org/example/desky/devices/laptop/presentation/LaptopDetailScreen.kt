@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,6 +25,8 @@ import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.devices.laptop.presentation.components.LaptopActionsRow
 import org.example.desky.devices.laptop.presentation.components.LaptopHeaderCard
 import androidx.compose.material3.MaterialTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.core.presentation.theme.StatusAmber
@@ -46,9 +49,16 @@ fun LaptopDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
+        var snackbarJob: Job? = null
         viewModel.effect.collect { effect ->
             when (effect) {
-                is LaptopEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is LaptopEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = this.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
+                }
             }
         }
     }
@@ -85,48 +95,54 @@ fun LaptopDetailScreenContent(
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { onIntent(LaptopIntent.RefreshStatus) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(scrollState)
         ) {
-            Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-            // 1. Device Header Card
-            LaptopHeaderCard(
-                powerState = state.powerState,
-                status = state.connectionStatus,
-                onPowerClick = {
-                    if (state.powerState == PowerState.ON) {
-                        onIntent(LaptopIntent.RequestShutdown)
-                    } else {
-                        onIntent(LaptopIntent.PowerClick)
+                // 1. Device Header Card
+                LaptopHeaderCard(
+                    powerState = state.powerState,
+                    status = state.connectionStatus,
+                    onPowerClick = {
+                        if (state.powerState == PowerState.ON) {
+                            onIntent(LaptopIntent.RequestShutdown)
+                        } else {
+                            onIntent(LaptopIntent.PowerClick)
+                        }
                     }
-                },
-                onRetryConnection = { onIntent(LaptopIntent.RetryConnection) }
-            )
+                )
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // 2. System Status Card (The 3 Essentials: Session, Power, Uptime)
-            LaptopStatusCard(
-                telemetry = state.telemetry,
-                isOnline = state.isOnline
-            )
+                // 2. System Status Card
+                LaptopStatusCard(
+                    telemetry = state.telemetry,
+                    isOnline = state.isOnline
+                )
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-            // 3. Actions Row (Lock, Sleep, Restart)
-            LaptopActionsRow(
-                onLockClick = { onIntent(LaptopIntent.Lock) },
-                onSleepClick = { onIntent(LaptopIntent.Sleep) },
-                onRestartClick = { onIntent(LaptopIntent.RequestRestart) },
-                enabled = state.isOnline
-            )
+                // 3. Actions Row
+                LaptopActionsRow(
+                    onLockClick = { onIntent(LaptopIntent.Lock) },
+                    onSleepClick = { onIntent(LaptopIntent.Sleep) },
+                    onRestartClick = { onIntent(LaptopIntent.RequestRestart) },
+                    enabled = state.isOnline
+                )
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
 
         // Confirmation Dialogs

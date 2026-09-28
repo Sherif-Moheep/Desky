@@ -16,7 +16,8 @@ data class LaptopState(
     ),
     val showShutdownDialog: Boolean = false,
     val showRestartDialog: Boolean = false,
-    val isBusy: Boolean = false
+    val isBusy: Boolean = false,
+    val isRefreshing: Boolean = false
 ) {
     val isOnline: Boolean
         get() = connectionStatus is DeviceConnectionStatus.Online && powerState == PowerState.ON

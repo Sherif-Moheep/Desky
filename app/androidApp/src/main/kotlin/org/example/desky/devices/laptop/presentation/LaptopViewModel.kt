@@ -7,16 +7,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
+import org.example.desky.core.domain.repository.SettingsRepository
+import org.example.desky.core.util.checkSocketConnection
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
 
-class LaptopViewModel : ViewModel() {
+class LaptopViewModel(
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
 
     private val _state = MutableStateFlow(LaptopState())
     val state: StateFlow<LaptopState> = _state.asStateFlow()
@@ -125,13 +130,26 @@ class LaptopViewModel : ViewModel() {
     }
 
     private fun handleRetryConnection() {
-        viewModelScope.launch {
-            _effect.send(LaptopEffect.ShowSnackbar("Pinging laptop server..."))
-            // TODO: Wire to domain layer (Health ping to laptop server)
-        }
+        handleRefreshStatus()
     }
 
     private fun handleRefreshStatus() {
-        // TODO: Wire to domain layer (Periodic or manual status fetch)
+        viewModelScope.launch {
+            _state.update { it.copy(isRefreshing = true) }
+            val endpoint = settingsRepository.laptopEndpointFlow.first()
+            val status = checkSocketConnection(endpoint)
+            _state.update {
+                it.copy(
+                    connectionStatus = status,
+                    isRefreshing = false
+                )
+            }
+            val message = if (status is DeviceConnectionStatus.Online) {
+                "Workstation online (${status.latencyMs}ms)"
+            } else {
+                "Workstation offline"
+            }
+            _effect.send(LaptopEffect.ShowSnackbar(message))
+        }
     }
 }

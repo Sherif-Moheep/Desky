@@ -13,9 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -43,9 +41,8 @@ fun LaptopHeaderCard(
     powerState: PowerState,
     status: DeviceConnectionStatus,
     onPowerClick: () -> Unit,
-    onRetryConnection: () -> Unit,
     modifier: Modifier = Modifier,
-    ) {
+) {
     OutlinedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -100,38 +97,16 @@ fun LaptopHeaderCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (status is DeviceConnectionStatus.Offline) {
-                    FilledTonalIconButton(
-                        onClick = onRetryConnection,
-                        modifier = Modifier.size(36.dp),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.refresh),
-                            contentDescription = "Retry connection",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+            PowerButton(
+                powerState = powerState,
+                onClick = onPowerClick,
+                contentDescription = when (powerState) {
+                    PowerState.ON -> "Shut Down Laptop"
+                    PowerState.OFF -> "Turn ON Laptop"
+                    PowerState.BOOTING -> "Booting..."
+                    PowerState.SHUTTING_DOWN -> "Shutting Down..."
                 }
-
-                PowerButton(
-                    powerState = powerState,
-                    onClick = onPowerClick,
-                    contentDescription = when (powerState) {
-                        PowerState.ON -> "Shut Down Laptop"
-                        PowerState.OFF -> "Turn ON Laptop"
-                        PowerState.BOOTING -> "Booting..."
-                        PowerState.SHUTTING_DOWN -> "Shutting Down..."
-                    }
-                )
-            }
+            )
         }
     }
 }
@@ -149,21 +124,18 @@ fun PreviewLaptopHeaderCard() {
                     powerState = if (powerState == PowerState.ON) PowerState.OFF else PowerState.ON
                 },
                 status = DeviceConnectionStatus.Online(12),
-                onRetryConnection = {},
             )
             Spacer(modifier = Modifier.size(12.dp))
             LaptopHeaderCard(
                 powerState = PowerState.BOOTING,
                 onPowerClick = {},
                 status = DeviceConnectionStatus.Pinging,
-                onRetryConnection = {},
             )
             Spacer(modifier = Modifier.size(12.dp))
             LaptopHeaderCard(
                 powerState = PowerState.OFF,
                 onPowerClick = { powerState = PowerState.BOOTING },
                 status = DeviceConnectionStatus.Offline("Offline"),
-                onRetryConnection = {},
             )
         }
     }

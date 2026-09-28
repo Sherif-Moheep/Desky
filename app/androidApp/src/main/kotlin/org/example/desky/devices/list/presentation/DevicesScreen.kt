@@ -108,8 +108,6 @@ fun DevicesScreenContent(
                     .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Spacer(modifier = Modifier.height(4.dp))
-
                 // Network & devices summary header
                 DeviceSummaryHeader(
                     onlineCount = state.onlineCount,

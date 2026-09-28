@@ -5,7 +5,7 @@ import org.example.desky.core.di.coreModule
 import org.example.desky.devices.list.di.devicesModule
 import org.example.desky.home.di.homeModule
 import org.example.desky.devices.laptop.di.laptopModule
-import org.example.desky.devices.led_strip.di.ledModule
+import org.example.desky.devices.led.di.ledModule
 import org.example.desky.settings.di.settingsModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger

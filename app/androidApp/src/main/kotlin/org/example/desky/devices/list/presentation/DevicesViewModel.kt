@@ -18,7 +18,7 @@ import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
 import org.example.desky.core.util.checkSocketConnection
-import org.example.desky.devices.led_strip.domain.usecase.LedUseCases
+import org.example.desky.devices.led.domain.usecase.LedUseCases
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
 import org.example.desky.devices.list.presentation.contract.DevicesIntent
 import org.example.desky.devices.list.presentation.contract.DevicesState

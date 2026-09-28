@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import org.example.desky.R
 import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
@@ -30,7 +34,7 @@ import org.example.desky.settings.presentation.components.AppInfoCard
 import org.example.desky.settings.presentation.components.DeviceConfigCard
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.settings.presentation.components.ThemeSelectorCard
-import org.example.desky.settings.presentation.contract.DeviceType
+import org.example.desky.settings.presentation.model.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
 import org.example.desky.settings.presentation.contract.SettingsState
@@ -45,9 +49,16 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(viewModel) {
+        var snackbarJob: Job? = null
         viewModel.effect.collect { effect ->
             when (effect) {
-                is SettingsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is SettingsEffect.ShowSnackbar -> {
+                    snackbarJob?.cancel()
+                    snackbarJob = this.launch {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
+                }
             }
         }
     }
@@ -60,6 +71,7 @@ fun SettingsScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsContent(
     state: SettingsState,
@@ -77,69 +89,76 @@ fun SettingsContent(
             SnackbarHost(hostState = snackbarHostState)
         }
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { onIntent(SettingsIntent.PingAllDevices) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Section: Devices & Networking
-            SectionHeader(title = "Devices & Networking")
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Section: Devices & Networking
+                SectionHeader(title = "Devices & Networking")
 
-            DeviceConfigCard(
-                name = "ESP32 Power Relay",
-                subtitle = "Laptop charger AC relay",
-                iconRes = R.drawable.electricity,
-                host = state.espHost,
-                onHostChange = { onIntent(SettingsIntent.UpdateEspHost(it)) },
-                port = state.espPort,
-                onPortChange = { onIntent(SettingsIntent.UpdateEspPort(it)) },
-                status = state.espStatus,
-                onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.ESP_RELAY)) }
-            )
+                DeviceConfigCard(
+                    name = "ESP32 Power Relay",
+                    subtitle = "Laptop charger AC relay",
+                    iconRes = R.drawable.electricity,
+                    host = state.espHost,
+                    onHostChange = { onIntent(SettingsIntent.UpdateEspHost(it)) },
+                    port = state.espPort,
+                    onPortChange = { onIntent(SettingsIntent.UpdateEspPort(it)) },
+                    status = state.espStatus,
+                    onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.ESP_RELAY)) }
+                )
 
-            DeviceConfigCard(
-                name = "Laptop",
-                subtitle = "Windows Ktor server",
-                iconRes = R.drawable.laptop,
-                host = state.laptopHost,
-                onHostChange = { onIntent(SettingsIntent.UpdateLaptopHost(it)) },
-                port = state.laptopPort,
-                onPortChange = { onIntent(SettingsIntent.UpdateLaptopPort(it)) },
-                status = state.laptopStatus,
-                onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.LAPTOP)) }
-            )
+                DeviceConfigCard(
+                    name = "Laptop",
+                    subtitle = "Windows Ktor server",
+                    iconRes = R.drawable.laptop,
+                    host = state.laptopHost,
+                    onHostChange = { onIntent(SettingsIntent.UpdateLaptopHost(it)) },
+                    port = state.laptopPort,
+                    onPortChange = { onIntent(SettingsIntent.UpdateLaptopPort(it)) },
+                    status = state.laptopStatus,
+                    onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.LAPTOP)) }
+                )
 
-            DeviceConfigCard(
-                name = "LED Strip Controller",
-                subtitle = "Magic Home Controller",
-                iconRes = R.drawable.led_strip,
-                host = state.ledHost,
-                onHostChange = { onIntent(SettingsIntent.UpdateLedHost(it)) },
-                port = state.ledPort,
-                onPortChange = { onIntent(SettingsIntent.UpdateLedPort(it)) },
-                status = state.ledStatus,
-                onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.LED_STRIP)) }
-            )
+                DeviceConfigCard(
+                    name = "LED Strip Controller",
+                    subtitle = "Magic Home Controller",
+                    iconRes = R.drawable.led_strip,
+                    host = state.ledHost,
+                    onHostChange = { onIntent(SettingsIntent.UpdateLedHost(it)) },
+                    port = state.ledPort,
+                    onPortChange = { onIntent(SettingsIntent.UpdateLedPort(it)) },
+                    status = state.ledStatus,
+                    onActionClick = { onIntent(SettingsIntent.PingDevice(DeviceType.LED_STRIP)) }
+                )
 
-            // Section: Appearance
-            SectionHeader(title = "Appearance")
+                // Section: Appearance
+                SectionHeader(title = "Appearance")
 
-            ThemeSelectorCard(
-                currentTheme = state.themeMode,
-                onThemeChange = { onIntent(SettingsIntent.SetThemeMode(it)) }
-            )
+                ThemeSelectorCard(
+                    currentTheme = state.themeMode,
+                    onThemeChange = { onIntent(SettingsIntent.SetThemeMode(it)) }
+                )
 
-            // Section: About & Maintenance
-            SectionHeader(title = "About & Maintenance")
+                // Section: About & Maintenance
+                SectionHeader(title = "About & Maintenance")
 
-            AppInfoCard(
-                onResetDefaults = { onIntent(SettingsIntent.ShowResetDialog) }
-            )
+                AppInfoCard(
+                    onResetDefaults = { onIntent(SettingsIntent.ShowResetDialog) }
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 
