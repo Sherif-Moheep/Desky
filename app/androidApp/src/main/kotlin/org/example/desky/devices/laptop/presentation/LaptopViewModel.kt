@@ -114,7 +114,7 @@ class LaptopViewModel(
 
     private fun handleLock() {
         _state.update {
-            it.copy(telemetry = it.telemetry.copy(isLocked = true))
+            it.copy(telemetry = it.telemetry?.copy(isLocked = true))
         }
         viewModelScope.launch {
             _effect.send(LaptopEffect.ShowSnackbar("Workstation locked"))

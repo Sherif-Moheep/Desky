@@ -34,11 +34,11 @@ import androidx.compose.ui.unit.sp
 import org.example.desky.R
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.core.presentation.theme.StatusAmber
-import org.example.desky.devices.laptop.presentation.model.LaptopTelemetryState
+import org.example.desky.model.LaptopTelemetryDto
 
 @Composable
 fun LaptopStatusCard(
-    telemetry: LaptopTelemetryState,
+    telemetry: LaptopTelemetryDto?,
     isOnline: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -48,19 +48,20 @@ fun LaptopStatusCard(
     )
 
     val sessionTint = when {
-        !isOnline -> MaterialTheme.colorScheme.outline
+        !isOnline || telemetry == null -> MaterialTheme.colorScheme.outline
         telemetry.isLocked -> MaterialTheme.colorScheme.primary
         else -> StatusAmber
     }
 
     val powerTint = when {
-        !isOnline -> MaterialTheme.colorScheme.outline
+        !isOnline || telemetry == null -> MaterialTheme.colorScheme.outline
         telemetry.isAcConnected -> StatusAmber
         telemetry.batteryPercent <= 20 -> MaterialTheme.colorScheme.error
         else -> MaterialTheme.colorScheme.onSurface
     }
 
     val batteryIconRes = when {
+        telemetry == null || !isOnline -> R.drawable.battery_full
         telemetry.isAcConnected -> R.drawable.electricity
         telemetry.batteryPercent >= 90 -> R.drawable.battery_full
         telemetry.batteryPercent >= 70 -> R.drawable.battery_5
@@ -100,8 +101,8 @@ fun LaptopStatusCard(
                 // 1. SESSION
                 StatusMetricColumn(
                     label = "SESSION",
-                    value = if (isOnline) (if (telemetry.isLocked) "Locked" else "Unlocked") else "--",
-                    iconRes = if (telemetry.isLocked) R.drawable.lock else R.drawable.lock_open,
+                    value = if (isOnline && telemetry != null) (if (telemetry.isLocked) "Locked" else "Unlocked") else "--",
+                    iconRes = if (telemetry?.isLocked == true) R.drawable.lock else R.drawable.lock_open,
                     iconTint = sessionTint,
                     modifier = Modifier.weight(1f)
                 )
@@ -114,7 +115,7 @@ fun LaptopStatusCard(
                 // 2. POWER
                 StatusMetricColumn(
                     label = "POWER",
-                    value = if (isOnline) "${telemetry.batteryPercent}% ${if (telemetry.isAcConnected) "AC" else "Bat"}" else "--",
+                    value = if (isOnline && telemetry != null) "${telemetry.batteryPercent}% ${if (telemetry.isAcConnected) "AC" else "Bat"}" else "--",
                     iconRes = batteryIconRes,
                     iconTint = powerTint,
                     modifier = Modifier.weight(1f)
@@ -128,7 +129,7 @@ fun LaptopStatusCard(
                 // 3. UPTIME
                 StatusMetricColumn(
                     label = "UPTIME",
-                    value = if (isOnline) telemetry.uptimeFormatted else "--",
+                    value = if (isOnline && telemetry != null) telemetry.uptimeFormatted else "--",
                     iconRes = R.drawable.timer,
                     iconTint = if (isOnline) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
                     modifier = Modifier.weight(1f)
@@ -187,7 +188,7 @@ fun PreviewLaptopStatusCardOnline() {
     DeskyTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             LaptopStatusCard(
-                telemetry = LaptopTelemetryState(
+                telemetry = LaptopTelemetryDto(
                     isLocked = true,
                     isAcConnected = true,
                     batteryPercent = 100,
@@ -198,7 +199,7 @@ fun PreviewLaptopStatusCardOnline() {
             Spacer(modifier = Modifier.height(16.dp))
 
             LaptopStatusCard(
-                telemetry = LaptopTelemetryState(
+                telemetry = LaptopTelemetryDto(
                     isLocked = false,
                     isAcConnected = false,
                     batteryPercent = 40,
@@ -209,7 +210,7 @@ fun PreviewLaptopStatusCardOnline() {
             Spacer(modifier = Modifier.height(16.dp))
 
             LaptopStatusCard(
-                telemetry = LaptopTelemetryState(),
+                telemetry = null,
                 isOnline = false
             )
         }

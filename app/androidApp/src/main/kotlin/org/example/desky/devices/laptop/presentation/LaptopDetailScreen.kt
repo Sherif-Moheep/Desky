@@ -36,7 +36,7 @@ import org.example.desky.devices.laptop.presentation.components.LaptopStatusCard
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
-import org.example.desky.devices.laptop.presentation.model.LaptopTelemetryState
+import org.example.desky.model.LaptopTelemetryDto
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -181,7 +181,7 @@ fun PreviewLaptopDetailScreenOnline() {
             state = LaptopState(
                 powerState = PowerState.ON,
                 connectionStatus = DeviceConnectionStatus.Online(12),
-                telemetry = LaptopTelemetryState(
+                telemetry = LaptopTelemetryDto(
                     isLocked = true,
                     isAcConnected = true,
                     batteryPercent = 100,
@@ -203,7 +203,7 @@ fun PreviewLaptopDetailScreenOffline() {
             state = LaptopState(
                 powerState = PowerState.OFF,
                 connectionStatus = DeviceConnectionStatus.Offline("Offline"),
-                telemetry = LaptopTelemetryState()
+                telemetry = null
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
