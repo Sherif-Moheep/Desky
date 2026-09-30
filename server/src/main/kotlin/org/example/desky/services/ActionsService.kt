@@ -1,4 +1,4 @@
-package org.example.desky
+package org.example.desky.services
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -16,7 +16,6 @@ object ActionsService {
 
     suspend fun sleep(): Boolean = withContext(Dispatchers.IO) {
         try {
-            // Notice the \$ before false: Kotlin strings require escaping '$'
             val sleepScript = "Add-Type -AssemblyName System.Windows.Forms; " +
                     "[System.Windows.Forms.Application]::SetSuspendState([System.Windows.Forms.PowerState]::Suspend, \$false, \$false)"
             ProcessBuilder(

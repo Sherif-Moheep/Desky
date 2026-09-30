@@ -1,4 +1,4 @@
-package org.example.desky
+package org.example.desky.services
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

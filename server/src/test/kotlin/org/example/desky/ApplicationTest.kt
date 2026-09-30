@@ -1,7 +1,6 @@
 package org.example.desky
 
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
 import kotlin.test.*
@@ -9,12 +8,11 @@ import kotlin.test.*
 class ApplicationTest {
 
     @Test
-    fun testRoot() = testApplication {
+    fun testPing() = testApplication {
         application {
             module()
         }
-        val response = client.get("/")
+        val response = client.get("/ping")
         assertEquals(HttpStatusCode.OK, response.status)
-        assertEquals("Hello, Ktor!", response.bodyAsText())
     }
 }
