@@ -171,7 +171,7 @@ fun PreviewDevicesScreenAllOnline() {
     DeskyTheme {
         DevicesScreenContent(
             state = DevicesState(
-                laptopHost = "desky-laptop.local",
+                laptopHost = "Sherif-Laptop.local",
                 laptopPort = 8080,
                 laptopStatus = DeviceConnectionStatus.Online(12),
                 espStatus = DeviceConnectionStatus.Online(8),
@@ -200,7 +200,7 @@ fun PreviewDevicesScreenOneOffline() {
     DeskyTheme {
         DevicesScreenContent(
             state = DevicesState(
-                laptopHost = "desky-laptop.local",
+                laptopHost = "Sherif-Laptop.local",
                 laptopPort = 8080,
                 laptopStatus = DeviceConnectionStatus.Offline("Offline"),
                 espStatus = DeviceConnectionStatus.Online(8),

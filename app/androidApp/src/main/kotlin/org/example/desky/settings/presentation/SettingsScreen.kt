@@ -196,7 +196,7 @@ fun PreviewSettingsScreen() {
             state = SettingsState(
                 espHost = "desky-relay.local",
                 espPort = "80",
-                laptopHost = "desky-laptop.local",
+                laptopHost = "Sherif-Laptop.local",
                 laptopPort = "8080",
                 ledHost = "192.168.1.150",
                 ledPort = "5577"

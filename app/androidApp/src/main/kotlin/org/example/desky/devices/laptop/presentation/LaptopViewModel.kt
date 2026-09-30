@@ -7,20 +7,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
-import org.example.desky.core.domain.repository.SettingsRepository
-import org.example.desky.core.util.checkSocketConnection
+import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
 
 class LaptopViewModel(
-    private val settingsRepository: SettingsRepository
+    private val useCases: LaptopUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LaptopState())
@@ -28,6 +26,10 @@ class LaptopViewModel(
 
     private val _effect = Channel<LaptopEffect>(Channel.BUFFERED)
     val effect: Flow<LaptopEffect> = _effect.receiveAsFlow()
+
+    init {
+        handleRefreshStatus(showToast = false)
+    }
 
     fun sendIntent(intent: LaptopIntent) {
         when (intent) {
@@ -41,7 +43,7 @@ class LaptopViewModel(
             is LaptopIntent.Lock -> handleLock()
             is LaptopIntent.Sleep -> handleSleep()
             is LaptopIntent.RetryConnection -> handleRetryConnection()
-            is LaptopIntent.RefreshStatus -> handleRefreshStatus()
+            is LaptopIntent.RefreshStatus -> handleRefreshStatus(showToast = true)
         }
     }
 
@@ -59,7 +61,7 @@ class LaptopViewModel(
                 }
                 viewModelScope.launch {
                     _effect.send(LaptopEffect.ShowSnackbar("Relay triggered - starting workstation..."))
-                    // TODO: Wire to domain layer (ESP32 relay pulse & polling status)
+                    // Future: ESP32 relay pulse & polling status
                 }
             }
             PowerState.BOOTING,
@@ -77,17 +79,26 @@ class LaptopViewModel(
         _state.update {
             it.copy(
                 showShutdownDialog = false,
-                powerState = PowerState.SHUTTING_DOWN
+                powerState = PowerState.SHUTTING_DOWN,
+                isBusy = true
             )
         }
         viewModelScope.launch {
             _effect.send(LaptopEffect.ShowSnackbar("Shutting down workstation..."))
-            // TODO: Wire to domain layer (Laptop Ktor server /shutdown & ESP relay off)
-            _state.update {
-                it.copy(
-                    powerState = PowerState.OFF,
-                    connectionStatus = DeviceConnectionStatus.Offline("Offline")
-                )
+            val result = useCases.shutdown()
+            if (result.isSuccess) {
+                _state.update {
+                    it.copy(
+                        powerState = PowerState.OFF,
+                        connectionStatus = DeviceConnectionStatus.Offline("Powered Down"),
+                        telemetry = null,
+                        isBusy = false
+                    )
+                }
+                _effect.send(LaptopEffect.ShowSnackbar("Shutdown command sent"))
+            } else {
+                _state.update { it.copy(isBusy = false) }
+                _effect.send(LaptopEffect.ShowSnackbar("Failed to shut down: ${result.exceptionOrNull()?.message}"))
             }
         }
     }
@@ -101,10 +112,29 @@ class LaptopViewModel(
     }
 
     private fun handleConfirmRestart() {
-        _state.update { it.copy(showRestartDialog = false) }
+        _state.update {
+            it.copy(
+                showRestartDialog = false,
+                isBusy = true
+            )
+        }
         viewModelScope.launch {
             _effect.send(LaptopEffect.ShowSnackbar("Restarting workstation..."))
-            // TODO: Wire to domain layer (Laptop Ktor server /restart)
+            val result = useCases.restart()
+            if (result.isSuccess) {
+                _state.update {
+                    it.copy(
+                        powerState = PowerState.BOOTING,
+                        connectionStatus = DeviceConnectionStatus.Pinging,
+                        telemetry = null,
+                        isBusy = false
+                    )
+                }
+                _effect.send(LaptopEffect.ShowSnackbar("Restart command sent"))
+            } else {
+                _state.update { it.copy(isBusy = false) }
+                _effect.send(LaptopEffect.ShowSnackbar("Failed to restart: ${result.exceptionOrNull()?.message}"))
+            }
         }
     }
 
@@ -113,43 +143,81 @@ class LaptopViewModel(
     }
 
     private fun handleLock() {
-        _state.update {
-            it.copy(telemetry = it.telemetry?.copy(isLocked = true))
-        }
+        _state.update { it.copy(isBusy = true) }
         viewModelScope.launch {
-            _effect.send(LaptopEffect.ShowSnackbar("Workstation locked"))
-            // TODO: Wire to domain layer (Laptop Ktor server /lock)
+            val result = useCases.lock()
+            if (result.isSuccess) {
+                _state.update {
+                    it.copy(
+                        telemetry = it.telemetry?.copy(isLocked = true),
+                        isBusy = false
+                    )
+                }
+                _effect.send(LaptopEffect.ShowSnackbar("Workstation locked"))
+            } else {
+                _state.update { it.copy(isBusy = false) }
+                _effect.send(LaptopEffect.ShowSnackbar("Failed to lock: ${result.exceptionOrNull()?.message}"))
+            }
         }
     }
 
     private fun handleSleep() {
+        _state.update { it.copy(isBusy = true) }
         viewModelScope.launch {
-            _effect.send(LaptopEffect.ShowSnackbar("Sleep command sent"))
-            // TODO: Wire to domain layer (Laptop Ktor server /sleep)
+            _effect.send(LaptopEffect.ShowSnackbar("Putting workstation to sleep..."))
+            val result = useCases.sleep()
+            if (result.isSuccess) {
+                _state.update {
+                    it.copy(
+                        powerState = PowerState.OFF,
+                        connectionStatus = DeviceConnectionStatus.Offline("Sleeping"),
+                        telemetry = null,
+                        isBusy = false
+                    )
+                }
+                _effect.send(LaptopEffect.ShowSnackbar("Sleep command sent"))
+            } else {
+                _state.update { it.copy(isBusy = false) }
+                _effect.send(LaptopEffect.ShowSnackbar("Failed to put workstation to sleep: ${result.exceptionOrNull()?.message}"))
+            }
         }
     }
 
     private fun handleRetryConnection() {
-        handleRefreshStatus()
+        handleRefreshStatus(showToast = true)
     }
 
-    private fun handleRefreshStatus() {
+    private fun handleRefreshStatus(showToast: Boolean = true) {
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
-            val endpoint = settingsRepository.laptopEndpointFlow.first()
-            val status = checkSocketConnection(endpoint)
-            _state.update {
-                it.copy(
-                    connectionStatus = status,
-                    isRefreshing = false
-                )
-            }
-            val message = if (status is DeviceConnectionStatus.Online) {
-                "Workstation online (${status.latencyMs}ms)"
+            val status = useCases.checkStatus()
+            if (status is DeviceConnectionStatus.Online) {
+                val telemetryResult = useCases.getTelemetry()
+                val telemetry = telemetryResult.getOrNull()
+                _state.update {
+                    it.copy(
+                        powerState = PowerState.ON,
+                        connectionStatus = status,
+                        telemetry = telemetry ?: it.telemetry,
+                        isRefreshing = false
+                    )
+                }
+                if (showToast) {
+                    _effect.send(LaptopEffect.ShowSnackbar("Workstation online (${status.latencyMs}ms)"))
+                }
             } else {
-                "Workstation offline"
+                _state.update {
+                    it.copy(
+                        powerState = PowerState.OFF,
+                        connectionStatus = status,
+                        telemetry = null,
+                        isRefreshing = false
+                    )
+                }
+                if (showToast) {
+                    _effect.send(LaptopEffect.ShowSnackbar("Workstation offline"))
+                }
             }
-            _effect.send(LaptopEffect.ShowSnackbar(message))
         }
     }
 }

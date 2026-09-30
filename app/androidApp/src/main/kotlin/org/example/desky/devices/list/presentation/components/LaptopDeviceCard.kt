@@ -263,7 +263,7 @@ fun PreviewLaptopDeviceCard() {
     DeskyTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             LaptopDeviceCard(
-                host = "desky-laptop.local",
+                host = "Sherif-Laptop.local",
                 port = 8080,
                 serverStatus = DeviceConnectionStatus.Online(12),
                 espStatus = DeviceConnectionStatus.Online(8),
@@ -275,7 +275,7 @@ fun PreviewLaptopDeviceCard() {
             )
             Spacer(modifier = Modifier.height(12.dp))
             LaptopDeviceCard(
-                host = "desky-laptop.local",
+                host = "Sherif-Laptop.local",
                 port = 8080,
                 serverStatus = DeviceConnectionStatus.Offline("Offline"),
                 espStatus = DeviceConnectionStatus.Online(9),

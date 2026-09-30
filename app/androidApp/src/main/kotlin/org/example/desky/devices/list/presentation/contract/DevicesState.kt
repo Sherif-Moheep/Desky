@@ -6,7 +6,7 @@ import org.example.desky.core.domain.model.PowerState
 
 data class DevicesState(
     // Laptop state
-    val laptopHost: String = "desky-laptop.local",
+    val laptopHost: String = "Sherif-Laptop.local",
     val laptopPort: Int = 8080,
     val laptopStatus: DeviceConnectionStatus = DeviceConnectionStatus.Idle,
     val laptopPowerState: PowerState = PowerState.ON,

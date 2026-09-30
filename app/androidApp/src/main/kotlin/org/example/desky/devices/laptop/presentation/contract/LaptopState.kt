@@ -6,8 +6,8 @@ import org.example.desky.model.LaptopTelemetryDto
 
 
 data class LaptopState(
-    val powerState: PowerState = PowerState.ON,
-    val connectionStatus: DeviceConnectionStatus = DeviceConnectionStatus.Online(12),
+    val powerState: PowerState = PowerState.OFF,
+    val connectionStatus: DeviceConnectionStatus = DeviceConnectionStatus.Idle,
     val telemetry: LaptopTelemetryDto? = null,
     val showShutdownDialog: Boolean = false,
     val showRestartDialog: Boolean = false,
