@@ -23,6 +23,7 @@ kotlinxSerializationCore = "1.11.0"
 lifecycleViewmodelNav3 = "2.12.0-alpha04"
 datastore = "1.2.1"
 koin = "4.2.2"
+jmdns = "3.6.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -61,6 +62,7 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

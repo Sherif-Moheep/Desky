@@ -1,9 +1,11 @@
 package org.example.desky.devices.laptop.di
 
+import org.example.desky.devices.laptop.data.datasource.LaptopDiscoveryDataSource
 import org.example.desky.devices.laptop.data.datasource.LaptopRemoteDataSource
 import org.example.desky.devices.laptop.data.repository.LaptopRepositoryImpl
 import org.example.desky.devices.laptop.domain.repository.LaptopRepository
 import org.example.desky.devices.laptop.domain.usecase.CheckLaptopStatusUseCase
+import org.example.desky.devices.laptop.domain.usecase.DiscoverLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.GetLaptopTelemetryUseCase
 import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
 import org.example.desky.devices.laptop.domain.usecase.LockLaptopUseCase
@@ -12,6 +14,7 @@ import org.example.desky.devices.laptop.domain.usecase.RestartLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.ShutdownLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.SleepLaptopUseCase
 import org.example.desky.devices.laptop.presentation.LaptopViewModel
+import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -21,6 +24,7 @@ import org.koin.dsl.module
 val laptopModule = module {
     // Data sources
     singleOf(::LaptopRemoteDataSource)
+    single { LaptopDiscoveryDataSource(androidContext()) }
 
     // Repositories
     singleOf(::LaptopRepositoryImpl) { bind<LaptopRepository>() }
@@ -28,6 +32,7 @@ val laptopModule = module {
     // Use cases
     factoryOf(::CheckLaptopStatusUseCase)
     factoryOf(::ObserveLaptopConnectionStatusUseCase)
+    factoryOf(::DiscoverLaptopUseCase)
     factoryOf(::GetLaptopTelemetryUseCase)
     factoryOf(::LockLaptopUseCase)
     factoryOf(::SleepLaptopUseCase)

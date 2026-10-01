@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,17 +37,19 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            val initial = settingsRepository.settingsFlow.first()
-            _state.update {
-                it.copy(
-                    espHost = initial.espRelay.host,
-                    espPort = initial.espRelay.port.toString(),
-                    laptopHost = initial.laptop.host,
-                    laptopPort = initial.laptop.port.toString(),
-                    ledHost = initial.ledStrip.host,
-                    ledPort = initial.ledStrip.port.toString(),
-                    themeMode = initial.themeMode
-                )
+            settingsRepository.settingsFlow.collect { settings ->
+                if (debounceSaveJob?.isActive == true) return@collect
+                _state.update { current ->
+                    current.copy(
+                        espHost = settings.espRelay.host,
+                        espPort = settings.espRelay.port.toString(),
+                        laptopHost = settings.laptop.host,
+                        laptopPort = settings.laptop.port.toString(),
+                        ledHost = settings.ledStrip.host,
+                        ledPort = settings.ledStrip.port.toString(),
+                        themeMode = settings.themeMode
+                    )
+                }
             }
         }
     }
