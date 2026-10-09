@@ -8,19 +8,33 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.example.desky.services.MdnsServerService
+import org.example.desky.services.SystemTrayService
+import kotlin.system.exitProcess
 
 fun main() {
-    MdnsServerService.start(port = 8080)
+    val port = 8080
+    MdnsServerService.start(port = port)
+
+    val server = embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module)
+
+    SystemTrayService.init(port = port) {
+        SystemTrayService.remove()
+        MdnsServerService.stop()
+        server.stop(500, 1000)
+        exitProcess(0)
+    }
+
     Runtime.getRuntime().addShutdownHook(Thread {
+        SystemTrayService.remove()
         MdnsServerService.stop()
     })
 
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
+    server.start(wait = true)
 }
 
 fun Application.module() {
     monitor.subscribe(ApplicationStopping) {
+        SystemTrayService.remove()
         MdnsServerService.stop()
     }
 
