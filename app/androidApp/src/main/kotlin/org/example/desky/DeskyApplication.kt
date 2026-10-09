@@ -4,6 +4,7 @@ import android.app.Application
 import org.example.desky.core.di.coreModule
 import org.example.desky.devices.list.di.devicesModule
 import org.example.desky.home.di.homeModule
+import org.example.desky.devices.esp.di.espModule
 import org.example.desky.devices.laptop.di.laptopModule
 import org.example.desky.devices.led.di.ledModule
 import org.example.desky.settings.di.settingsModule
@@ -23,6 +24,7 @@ class DeskyApplication : Application() {
                 coreModule,
                 homeModule,
                 devicesModule,
+                espModule,
                 ledModule,
                 settingsModule,
                 laptopModule

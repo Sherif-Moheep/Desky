@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
-import org.example.desky.core.util.checkSocketConnection
+import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
+import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
 import org.example.desky.devices.led.domain.usecase.LedUseCases
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
 import org.example.desky.devices.list.presentation.contract.DevicesIntent
@@ -26,7 +27,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class DevicesViewModel(
     private val settingsRepository: SettingsRepository,
-    private val ledUseCases: LedUseCases
+    private val ledUseCases: LedUseCases,
+    private val laptopUseCases: LaptopUseCases,
+    private val espUseCases: EspRelayUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DevicesState())
@@ -93,13 +96,13 @@ class DevicesViewModel(
             val laptopDef = async {
                 val endpoint = settingsRepository.laptopEndpointFlow.first()
                 _state.update { it.copy(laptopHost = endpoint.host, laptopPort = endpoint.port) }
-                checkSocketConnection(endpoint)
+                laptopUseCases.checkStatus()
             }
 
             val espDef = async {
                 val endpoint = settingsRepository.espEndpointFlow.first()
                 _state.update { it.copy(espHost = endpoint.host, espPort = endpoint.port) }
-                checkSocketConnection(endpoint)
+                espUseCases.checkStatus()
             }
 
             val ledDef = async {
@@ -162,14 +165,32 @@ class DevicesViewModel(
                 }
                 viewModelScope.launch {
                     _effect.send(DevicesEffect.ShowSnackbar("Relay triggered - starting workstation..."))
-                    delay(1800.milliseconds)
-                    val endpoint = settingsRepository.laptopEndpointFlow.first()
-                    val status = checkSocketConnection(endpoint)
-                    _state.update {
-                        it.copy(
-                            laptopPowerState = PowerState.ON,
-                            laptopStatus = status
-                        )
+                    val relayResult = espUseCases.powerOn()
+                    if (relayResult.isFailure) {
+                        _state.update {
+                            it.copy(
+                                laptopPowerState = PowerState.OFF,
+                                laptopStatus = DeviceConnectionStatus.Offline("Relay unreachable")
+                            )
+                        }
+                        _effect.send(DevicesEffect.ShowSnackbar("Failed to trigger relay: ${relayResult.exceptionOrNull()?.message}"))
+                    } else {
+                        var attempts = 0
+                        while (attempts < 15) {
+                            delay(2000.milliseconds)
+                            val status = laptopUseCases.checkStatus()
+                            if (status is DeviceConnectionStatus.Online) {
+                                _state.update {
+                                    it.copy(
+                                        laptopPowerState = PowerState.ON,
+                                        laptopStatus = status
+                                    )
+                                }
+                                _effect.send(DevicesEffect.ShowSnackbar("Workstation online"))
+                                break
+                            }
+                            attempts++
+                        }
                     }
                 }
             }
@@ -188,7 +209,9 @@ class DevicesViewModel(
             )
         }
         viewModelScope.launch {
-            _effect.send(DevicesEffect.ShowSnackbar("Workstation shutdown command dispatched"))
+            _effect.send(DevicesEffect.ShowSnackbar("Shutting down workstation..."))
+            laptopUseCases.shutdown()
+            espUseCases.powerOff()
             delay(1200.milliseconds)
             _state.update {
                 it.copy(
@@ -196,6 +219,7 @@ class DevicesViewModel(
                     laptopStatus = DeviceConnectionStatus.Offline("Powered Down")
                 )
             }
+            _effect.send(DevicesEffect.ShowSnackbar("Shutdown command sent & relay reset"))
         }
     }
 

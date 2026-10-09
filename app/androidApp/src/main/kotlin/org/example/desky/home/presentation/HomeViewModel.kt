@@ -13,12 +13,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
+import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
+import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
+import org.example.desky.devices.led.domain.usecase.LedUseCases
 import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
 import org.example.desky.home.presentation.contract.HomeState
 import org.example.desky.home.presentation.model.HomeTelemetryUiState
+import kotlin.time.Duration.Companion.milliseconds
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(
+    private val espUseCases: EspRelayUseCases,
+    private val laptopUseCases: LaptopUseCases,
+    private val ledUseCases: LedUseCases
+) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state.asStateFlow()
@@ -60,20 +68,45 @@ class HomeViewModel : ViewModel() {
         }
         viewModelScope.launch {
             _effect.send(HomeEffect.ShowSnackbar("Relay triggered - starting desk setup..."))
-            // Simulate / future wire to domain layer (ESP32 relay pulse & polling status)
-            delay(1800)
-            _state.update {
-                it.copy(
-                    powerState = PowerState.ON,
-                    connectionStatus = DeviceConnectionStatus.Online(12),
-                    telemetry = it.telemetry.copy(
-                        laptop = it.telemetry.laptop.copy(isOnline = true, isLocked = false),
-                        light = it.telemetry.light.copy(isOnline = true, isOn = true),
-                        relay = it.telemetry.relay.copy(isOnline = true, isAcActive = true)
+            val relayResult = espUseCases.powerOn()
+            ledUseCases.setPower(true)
+            if (relayResult.isFailure) {
+                _state.update {
+                    it.copy(
+                        powerState = PowerState.OFF,
+                        connectionStatus = DeviceConnectionStatus.Offline("Relay unreachable")
                     )
-                )
+                }
+                _effect.send(HomeEffect.ShowSnackbar("Failed to trigger relay: ${relayResult.exceptionOrNull()?.message}"))
+            } else {
+                _state.update {
+                    it.copy(
+                        telemetry = it.telemetry.copy(
+                            light = it.telemetry.light.copy(isOnline = true, isOn = true),
+                            relay = it.telemetry.relay.copy(isOnline = true, isAcActive = true)
+                        )
+                    )
+                }
+                var attempts = 0
+                while (attempts < 15) {
+                    delay(2000.milliseconds)
+                    val status = laptopUseCases.checkStatus()
+                    if (status is DeviceConnectionStatus.Online) {
+                        _state.update {
+                            it.copy(
+                                powerState = PowerState.ON,
+                                connectionStatus = status,
+                                telemetry = it.telemetry.copy(
+                                    laptop = it.telemetry.laptop.copy(isOnline = true, isLocked = false)
+                                )
+                            )
+                        }
+                        _effect.send(HomeEffect.ShowSnackbar("Desk power ON - workstation & peripherals ready"))
+                        break
+                    }
+                    attempts++
+                }
             }
-            _effect.send(HomeEffect.ShowSnackbar("Desk power ON - workstation & peripherals ready"))
         }
     }
 
@@ -86,12 +119,14 @@ class HomeViewModel : ViewModel() {
         }
         viewModelScope.launch {
             _effect.send(HomeEffect.ShowSnackbar("Powering down desk setup..."))
-            // Simulate / future wire to domain layer (Laptop Ktor server /shutdown & ESP relay off)
-            delay(1500)
+            laptopUseCases.shutdown()
+            espUseCases.powerOff()
+            ledUseCases.setPower(false)
+            delay(1200.milliseconds)
             _state.update {
                 it.copy(
                     powerState = PowerState.OFF,
-                    connectionStatus = DeviceConnectionStatus.Online(12),
+                    connectionStatus = DeviceConnectionStatus.Offline("Desk Off"),
                     telemetry = it.telemetry.copy(
                         laptop = it.telemetry.laptop.copy(isOnline = false),
                         light = it.telemetry.light.copy(isOnline = true, isOn = false),
@@ -99,6 +134,7 @@ class HomeViewModel : ViewModel() {
                     )
                 )
             }
+            _effect.send(HomeEffect.ShowSnackbar("Desk powered down & relay reset"))
         }
     }
 
@@ -109,16 +145,27 @@ class HomeViewModel : ViewModel() {
     private fun handleRefreshTelemetry() {
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
-            _effect.send(HomeEffect.ShowSnackbar("Checking desk telemetry..."))
-            // TODO: Wire to domain layer for live ping / status check
-            _state.update { it.copy(isRefreshing = false) }
+            val espStatus = espUseCases.checkStatus()
+            val laptopStatus = laptopUseCases.checkStatus()
+            val ledStatus = ledUseCases.observeConnectionStatus().value
+
+            _state.update {
+                val isAnyOnline = espStatus is DeviceConnectionStatus.Online || laptopStatus is DeviceConnectionStatus.Online
+                it.copy(
+                    isRefreshing = false,
+                    connectionStatus = if (isAnyOnline) (if (laptopStatus is DeviceConnectionStatus.Online) laptopStatus else espStatus) else DeviceConnectionStatus.Offline("Offline"),
+                    telemetry = it.telemetry.copy(
+                        laptop = it.telemetry.laptop.copy(isOnline = laptopStatus is DeviceConnectionStatus.Online),
+                        relay = it.telemetry.relay.copy(isOnline = espStatus is DeviceConnectionStatus.Online, isAcActive = it.powerState == PowerState.ON),
+                        light = it.telemetry.light.copy(isOnline = ledStatus is DeviceConnectionStatus.Online)
+                    )
+                )
+            }
+            _effect.send(HomeEffect.ShowSnackbar("Desk telemetry refreshed"))
         }
     }
 
     private fun handleRetryConnection() {
-        viewModelScope.launch {
-            _effect.send(HomeEffect.ShowSnackbar("Pinging local devices..."))
-            // TODO: Wire to domain layer health pings
-        }
+        handleRefreshTelemetry()
     }
 }

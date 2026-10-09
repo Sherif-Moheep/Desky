@@ -3,6 +3,7 @@ package org.example.desky.devices.laptop.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,13 +13,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
+import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
 import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
 import org.example.desky.devices.laptop.presentation.contract.LaptopEffect
 import org.example.desky.devices.laptop.presentation.contract.LaptopIntent
 import org.example.desky.devices.laptop.presentation.contract.LaptopState
+import kotlin.time.Duration.Companion.milliseconds
 
 class LaptopViewModel(
-    private val useCases: LaptopUseCases
+    private val useCases: LaptopUseCases,
+    private val espUseCases: EspRelayUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LaptopState())
@@ -61,7 +65,36 @@ class LaptopViewModel(
                 }
                 viewModelScope.launch {
                     _effect.send(LaptopEffect.ShowSnackbar("Relay triggered - starting workstation..."))
-                    // Future: ESP32 relay pulse & polling status
+                    val relayResult = espUseCases.powerOn()
+                    if (relayResult.isFailure) {
+                        _state.update {
+                            it.copy(
+                                powerState = PowerState.OFF,
+                                connectionStatus = DeviceConnectionStatus.Offline("Relay unreachable")
+                            )
+                        }
+                        _effect.send(LaptopEffect.ShowSnackbar("Failed to trigger relay: ${relayResult.exceptionOrNull()?.message}"))
+                    } else {
+                        // Poll for workstation server to come online
+                        var attempts = 0
+                        while (attempts < 15) {
+                            delay(2000.milliseconds)
+                            val status = useCases.checkStatus()
+                            if (status is DeviceConnectionStatus.Online) {
+                                val telemetry = useCases.getTelemetry().getOrNull()
+                                _state.update {
+                                    it.copy(
+                                        powerState = PowerState.ON,
+                                        connectionStatus = status,
+                                        telemetry = telemetry ?: it.telemetry
+                                    )
+                                }
+                                _effect.send(LaptopEffect.ShowSnackbar("Workstation online"))
+                                break
+                            }
+                            attempts++
+                        }
+                    }
                 }
             }
             PowerState.BOOTING,
@@ -86,6 +119,8 @@ class LaptopViewModel(
         viewModelScope.launch {
             _effect.send(LaptopEffect.ShowSnackbar("Shutting down workstation..."))
             val result = useCases.shutdown()
+            // Reset relay to OFF state so it's ready for next boot cycle
+            espUseCases.powerOff()
             if (result.isSuccess) {
                 _state.update {
                     it.copy(
@@ -95,7 +130,7 @@ class LaptopViewModel(
                         isBusy = false
                     )
                 }
-                _effect.send(LaptopEffect.ShowSnackbar("Shutdown command sent"))
+                _effect.send(LaptopEffect.ShowSnackbar("Shutdown command sent & relay reset"))
             } else {
                 _state.update { it.copy(isBusy = false) }
                 _effect.send(LaptopEffect.ShowSnackbar("Failed to shut down: ${result.exceptionOrNull()?.message}"))

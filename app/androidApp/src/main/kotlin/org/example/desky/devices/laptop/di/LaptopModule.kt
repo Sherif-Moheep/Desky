@@ -14,7 +14,6 @@ import org.example.desky.devices.laptop.domain.usecase.RestartLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.ShutdownLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.SleepLaptopUseCase
 import org.example.desky.devices.laptop.presentation.LaptopViewModel
-import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -24,7 +23,7 @@ import org.koin.dsl.module
 val laptopModule = module {
     // Data sources
     singleOf(::LaptopRemoteDataSource)
-    single { LaptopDiscoveryDataSource(androidContext()) }
+    singleOf(::LaptopDiscoveryDataSource)
 
     // Repositories
     singleOf(::LaptopRepositoryImpl) { bind<LaptopRepository>() }
