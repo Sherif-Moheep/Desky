@@ -16,7 +16,9 @@ import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.AppSettings
 import org.example.desky.core.domain.repository.SettingsRepository
-import org.example.desky.core.util.checkSocketConnection
+import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
+import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
+import org.example.desky.devices.led.domain.usecase.LedUseCases
 import org.example.desky.settings.presentation.model.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
@@ -24,7 +26,10 @@ import org.example.desky.settings.presentation.contract.SettingsState
 import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val espUseCases: EspRelayUseCases,
+    private val laptopUseCases: LaptopUseCases,
+    private val ledUseCases: LedUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -108,47 +113,66 @@ class SettingsViewModel(
         debounceSaveJob?.cancel()
         debounceSaveJob = viewModelScope.launch {
             delay(500.milliseconds)
-            val currentState = _state.value
-            val espPortInt = currentState.espPort.toIntOrNull() ?: 80
-            val laptopPortInt = currentState.laptopPort.toIntOrNull() ?: 8080
-            val ledPortInt = currentState.ledPort.toIntOrNull() ?: 5577
-
-            settingsRepository.updateEspEndpoint(currentState.espHost, espPortInt)
-            settingsRepository.updateLaptopEndpoint(currentState.laptopHost, laptopPortInt)
-            settingsRepository.updateLedEndpoint(currentState.ledHost, ledPortInt)
+            commitCurrentEndpoints()
         }
     }
 
-    private fun pingDevice(device: DeviceType) {
-        viewModelScope.launch {
-            val (host, port) = when (device) {
-                DeviceType.ESP_RELAY -> {
-                    _state.update { it.copy(espStatus = DeviceConnectionStatus.Pinging) }
-                    _state.value.espHost to (_state.value.espPort.toIntOrNull() ?: 80)
-                }
-                DeviceType.LAPTOP -> {
-                    _state.update { it.copy(laptopStatus = DeviceConnectionStatus.Pinging) }
-                    _state.value.laptopHost to (_state.value.laptopPort.toIntOrNull() ?: 8080)
-                }
-                DeviceType.LED_STRIP -> {
-                    _state.update { it.copy(ledStatus = DeviceConnectionStatus.Pinging) }
-                    _state.value.ledHost to (_state.value.ledPort.toIntOrNull() ?: 5577)
-                }
-            }
+    private suspend fun commitCurrentEndpoints() {
+        debounceSaveJob?.cancel()
+        val currentState = _state.value
+        val espPortInt = currentState.espPort.toIntOrNull() ?: 80
+        val laptopPortInt = currentState.laptopPort.toIntOrNull() ?: 8080
+        val ledPortInt = currentState.ledPort.toIntOrNull() ?: 5577
 
-            val status = checkSocketConnection(host, port)
-            _state.update {
-                when (device) {
-                    DeviceType.ESP_RELAY -> it.copy(espStatus = status)
-                    DeviceType.LAPTOP -> it.copy(laptopStatus = status)
-                    DeviceType.LED_STRIP -> it.copy(ledStatus = status)
-                }
+        settingsRepository.updateEspEndpoint(currentState.espHost, espPortInt)
+        settingsRepository.updateLaptopEndpoint(currentState.laptopHost, laptopPortInt)
+        settingsRepository.updateLedEndpoint(currentState.ledHost, ledPortInt)
+    }
+
+    private fun updateDeviceStatus(
+        device: DeviceType,
+        status: DeviceConnectionStatus
+    ) {
+        _state.update { current ->
+            when (device) {
+                DeviceType.ESP_RELAY -> current.copy(espStatus = status)
+                DeviceType.LAPTOP -> current.copy(laptopStatus = status)
+                DeviceType.LED_STRIP -> current.copy(ledStatus = status)
             }
+        }
+    }
+
+    private suspend fun checkDeviceStatus(
+        device: DeviceType
+    ): DeviceConnectionStatus = when (device) {
+        DeviceType.ESP_RELAY -> espUseCases.checkStatus()
+        DeviceType.LAPTOP -> laptopUseCases.checkStatus()
+        DeviceType.LED_STRIP -> checkLedStatus()
+    }
+
+    private suspend fun checkLedStatus(): DeviceConnectionStatus {
+        val result = ledUseCases.connect(forceRediscovery = false)
+        return if (result.isSuccess) {
+            ledUseCases.observeConnectionStatus().value
+        } else {
+            DeviceConnectionStatus.Offline(result.exceptionOrNull()?.message ?: "Unreachable")
+        }
+    }
+
+    private fun pingDevice(
+        device: DeviceType
+    ) {
+        viewModelScope.launch {
+            commitCurrentEndpoints()
+            updateDeviceStatus(device, DeviceConnectionStatus.Pinging)
+            val status = checkDeviceStatus(device)
+            updateDeviceStatus(device, status)
         }
     }
 
     private fun pingAllDevices() {
         viewModelScope.launch {
+            commitCurrentEndpoints()
             _state.update {
                 it.copy(
                     isRefreshing = true,
@@ -158,17 +182,9 @@ class SettingsViewModel(
                 )
             }
 
-            val current = _state.value
-            val espHost = current.espHost
-            val espPort = current.espPort.toIntOrNull() ?: 80
-            val laptopHost = current.laptopHost
-            val laptopPort = current.laptopPort.toIntOrNull() ?: 8080
-            val ledHost = current.ledHost
-            val ledPort = current.ledPort.toIntOrNull() ?: 5577
-
-            val espDeferred = async { checkSocketConnection(espHost, espPort) }
-            val laptopDeferred = async { checkSocketConnection(laptopHost, laptopPort) }
-            val ledDeferred = async { checkSocketConnection(ledHost, ledPort) }
+            val espDeferred = async { checkDeviceStatus(DeviceType.ESP_RELAY) }
+            val laptopDeferred = async { checkDeviceStatus(DeviceType.LAPTOP) }
+            val ledDeferred = async { checkDeviceStatus(DeviceType.LED_STRIP) }
 
             val espStatus = espDeferred.await()
             val laptopStatus = laptopDeferred.await()
