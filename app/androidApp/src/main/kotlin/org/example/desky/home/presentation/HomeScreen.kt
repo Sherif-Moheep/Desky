@@ -30,7 +30,6 @@ import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.core.presentation.components.PowerButton
-import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.home.presentation.components.HomeGreeting
 import org.example.desky.R
@@ -88,11 +87,6 @@ fun HomeScreenContent(
     Scaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            TopLevelAppBar(
-                "Desky"
-            )
-        },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }

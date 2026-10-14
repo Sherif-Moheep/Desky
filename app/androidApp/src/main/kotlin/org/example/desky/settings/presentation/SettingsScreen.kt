@@ -31,7 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.example.desky.R
-import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.settings.presentation.components.AppInfoCard
 import org.example.desky.settings.presentation.components.DeviceConfigCard
@@ -89,9 +88,6 @@ fun SettingsContent(
             detectTapGestures(onTap = { focusManager.clearFocus() })
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            TopLevelAppBar("Settings")
-        },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }

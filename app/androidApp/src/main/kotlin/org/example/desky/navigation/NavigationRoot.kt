@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
@@ -17,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -25,6 +27,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
+import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.devices.navigation.devicesNavigation
 import org.example.desky.home.presentation.HomeScreen
 import org.example.desky.settings.presentation.SettingsScreen
@@ -79,8 +82,27 @@ fun NavigationRoot(
         }
     }
 
+    val topBarTitle = when (topLevelRoutesList.getOrNull(pagerState.targetPage)) {
+        TopRoutes.Home -> "Desky"
+        TopRoutes.Devices -> "Devices"
+        TopRoutes.Settings -> "Settings"
+        else -> "Desky"
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            AnimatedVisibility(
+                visible = isTopLevel,
+                enter = slideInVertically { -it } + fadeIn(),
+                exit = slideOutVertically { -it } + fadeOut()
+            ) {
+                TopLevelAppBar(
+                    title = topBarTitle
+                )
+            }
+        },
         bottomBar = {
             AnimatedVisibility(
                 visible = isTopLevel,
@@ -107,7 +129,10 @@ fun NavigationRoot(
             beyondViewportPageCount = 1,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = innerPadding.calculateBottomPadding())
+                .padding(
+                    top = if (isTopLevel) innerPadding.calculateTopPadding() else 0.dp,
+                    bottom = if (isTopLevel) innerPadding.calculateBottomPadding() else 0.dp
+                )
         ) { page ->
             when (topLevelRoutesList[page]) {
                 TopRoutes.Home -> HomeScreen()

@@ -1,5 +1,7 @@
 package org.example.desky.core.presentation.components
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -17,11 +19,17 @@ fun TopLevelAppBar(
     TopAppBar(
         modifier = modifier,
         title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold
-            )
+            Crossfade(
+                targetState = title,
+                animationSpec = tween(durationMillis = 200),
+                label = "TopLevelAppBarTitleCrossfade"
+            ) { targetTitle ->
+                Text(
+                    text = targetTitle,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
         }
     )
 }

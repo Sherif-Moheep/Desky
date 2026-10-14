@@ -25,7 +25,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
-import org.example.desky.core.presentation.components.TopLevelAppBar
 import org.example.desky.R
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.core.presentation.theme.DeskyTheme
@@ -87,9 +86,6 @@ fun DevicesScreenContent(
     Scaffold(
         modifier = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            TopLevelAppBar("Devices")
-        },
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState)
         }
