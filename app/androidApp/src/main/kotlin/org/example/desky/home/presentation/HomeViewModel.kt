@@ -2,6 +2,7 @@ package org.example.desky.home.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,7 @@ import org.example.desky.home.presentation.contract.HomeEffect
 import org.example.desky.home.presentation.contract.HomeIntent
 import org.example.desky.home.presentation.contract.HomeState
 import org.example.desky.home.presentation.model.HomeTelemetryUiState
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
 class HomeViewModel(
@@ -34,12 +36,17 @@ class HomeViewModel(
     private val _effect = Channel<HomeEffect>(Channel.BUFFERED)
     val effect: Flow<HomeEffect> = _effect.receiveAsFlow()
 
+    init {
+        // Startup telemetry synchronization (silent, no snackbar)
+        handleRefreshTelemetry(isManual = false)
+    }
+
     fun sendIntent(intent: HomeIntent) {
         when (intent) {
             is HomeIntent.ToggleDeskPower -> handleToggleDeskPower()
             is HomeIntent.ConfirmPowerOff -> handleConfirmPowerOff()
             is HomeIntent.DismissPowerOffDialog -> handleDismissPowerOffDialog()
-            is HomeIntent.RefreshTelemetry -> handleRefreshTelemetry()
+            is HomeIntent.RefreshTelemetry -> handleRefreshTelemetry(isManual = true)
             is HomeIntent.RetryConnection -> handleRetryConnection()
         }
     }
@@ -92,12 +99,16 @@ class HomeViewModel(
                     delay(2000.milliseconds)
                     val status = laptopUseCases.checkStatus()
                     if (status is DeviceConnectionStatus.Online) {
+                        val telemetry = laptopUseCases.getTelemetry().getOrNull()
                         _state.update {
                             it.copy(
                                 powerState = PowerState.ON,
                                 connectionStatus = status,
                                 telemetry = it.telemetry.copy(
-                                    laptop = it.telemetry.laptop.copy(isOnline = true, isLocked = false)
+                                    laptop = it.telemetry.laptop.copy(
+                                        isOnline = true,
+                                        isLocked = telemetry?.isLocked ?: false
+                                    )
                                 )
                             )
                         }
@@ -142,30 +153,97 @@ class HomeViewModel(
         _state.update { it.copy(showPowerOffDialog = false) }
     }
 
-    private fun handleRefreshTelemetry() {
+    private fun handleRefreshTelemetry(isManual: Boolean = false) {
         viewModelScope.launch {
             _state.update { it.copy(isRefreshing = true) }
-            val espStatus = espUseCases.checkStatus()
-            val laptopStatus = laptopUseCases.checkStatus()
+
+            val espStatusDef = async { espUseCases.checkStatus() }
+            val laptopStatusDef = async { laptopUseCases.checkStatus() }
+            val ledConnectDef = async { ledUseCases.connect(forceRediscovery = false) }
+
+            val espStatus = espStatusDef.await()
+            val laptopStatus = laptopStatusDef.await()
+            val ledResult = ledConnectDef.await()
             val ledStatus = ledUseCases.observeConnectionStatus().value
 
-            _state.update {
-                val isAnyOnline = espStatus is DeviceConnectionStatus.Online || laptopStatus is DeviceConnectionStatus.Online
-                it.copy(
+            val isLaptopOnline = laptopStatus is DeviceConnectionStatus.Online
+            val isRelayOnline = espStatus is DeviceConnectionStatus.Online
+            val isLedOnline = ledStatus is DeviceConnectionStatus.Online
+
+            // Query live telemetry DTOs if online
+            val laptopTelemetry = if (isLaptopOnline) {
+                laptopUseCases.getTelemetry().getOrNull()
+            } else null
+
+            val espRelayStatus = if (isRelayOnline) {
+                espUseCases.getStatus().getOrNull()
+            } else null
+
+            val ledDeviceState = ledResult.getOrNull()
+            val isLedOn = ledDeviceState?.isOn ?: false
+            val ledBrightnessPercent = if (ledDeviceState != null) {
+                val maxChannel = maxOf(ledDeviceState.red, ledDeviceState.green, ledDeviceState.blue)
+                if (maxChannel > 0) ((maxChannel / 255f) * 100).roundToInt() else 0
+            } else 0
+
+            val isAcActive = espRelayStatus?.isOn ?: (isLaptopOnline || _state.value.powerState == PowerState.ON)
+
+            val derivedPowerState = when {
+                isLaptopOnline -> PowerState.ON
+                isAcActive && _state.value.powerState == PowerState.BOOTING -> PowerState.BOOTING
+                !isAcActive && !isLaptopOnline -> PowerState.OFF
+                else -> _state.value.powerState
+            }
+
+            val latency = when {
+                laptopStatus is DeviceConnectionStatus.Online -> laptopStatus.latencyMs
+                espStatus is DeviceConnectionStatus.Online -> espStatus.latencyMs
+                ledStatus is DeviceConnectionStatus.Online -> ledStatus.latencyMs
+                else -> 0
+            }
+            val isNetworkConnected = isLaptopOnline || isRelayOnline || isLedOnline
+
+            val primaryConnectionStatus = when {
+                laptopStatus is DeviceConnectionStatus.Online -> laptopStatus
+                espStatus is DeviceConnectionStatus.Online -> espStatus
+                ledStatus is DeviceConnectionStatus.Online -> ledStatus
+                else -> DeviceConnectionStatus.Offline("Offline")
+            }
+
+            _state.update { current ->
+                current.copy(
                     isRefreshing = false,
-                    connectionStatus = if (isAnyOnline) (if (laptopStatus is DeviceConnectionStatus.Online) laptopStatus else espStatus) else DeviceConnectionStatus.Offline("Offline"),
-                    telemetry = it.telemetry.copy(
-                        laptop = it.telemetry.laptop.copy(isOnline = laptopStatus is DeviceConnectionStatus.Online),
-                        relay = it.telemetry.relay.copy(isOnline = espStatus is DeviceConnectionStatus.Online, isAcActive = it.powerState == PowerState.ON),
-                        light = it.telemetry.light.copy(isOnline = ledStatus is DeviceConnectionStatus.Online)
+                    powerState = derivedPowerState,
+                    connectionStatus = primaryConnectionStatus,
+                    telemetry = current.telemetry.copy(
+                        laptop = current.telemetry.laptop.copy(
+                            isOnline = isLaptopOnline,
+                            isLocked = laptopTelemetry?.isLocked ?: false
+                        ),
+                        relay = current.telemetry.relay.copy(
+                            isOnline = isRelayOnline,
+                            isAcActive = isAcActive
+                        ),
+                        light = current.telemetry.light.copy(
+                            isOnline = isLedOnline,
+                            isOn = isLedOn,
+                            brightnessPercent = if (isLedOn) ledBrightnessPercent else current.telemetry.light.brightnessPercent
+                        ),
+                        network = current.telemetry.network.copy(
+                            isConnected = isNetworkConnected,
+                            latencyMs = latency.toInt()
+                        )
                     )
                 )
             }
-            _effect.send(HomeEffect.ShowSnackbar("Desk telemetry refreshed"))
+
+            if (isManual) {
+                _effect.send(HomeEffect.ShowSnackbar("Desk telemetry refreshed"))
+            }
         }
     }
 
     private fun handleRetryConnection() {
-        handleRefreshTelemetry()
+        handleRefreshTelemetry(isManual = true)
     }
 }

@@ -5,10 +5,10 @@ import org.example.desky.core.domain.model.PowerState
 import org.example.desky.home.presentation.model.HomeTelemetryUiState
 
 data class HomeState(
-    val powerState: PowerState = PowerState.ON,
+    val powerState: PowerState = PowerState.OFF,
     val showPowerOffDialog: Boolean = false,
     val isRefreshing: Boolean = false,
-    val connectionStatus: DeviceConnectionStatus = DeviceConnectionStatus.Online(12),
+    val connectionStatus: DeviceConnectionStatus = DeviceConnectionStatus.Idle,
     val telemetry: HomeTelemetryUiState = HomeTelemetryUiState()
 ) {
     val isDeskOn: Boolean

@@ -40,6 +40,7 @@ import org.example.desky.home.presentation.contract.HomeState
 import org.example.desky.home.presentation.model.HomeTelemetryUiState
 import org.example.desky.home.presentation.model.LaptopTelemetry
 import org.example.desky.home.presentation.model.LightTelemetry
+import org.example.desky.home.presentation.model.NetworkTelemetry
 import org.example.desky.home.presentation.model.RelayTelemetry
 import org.koin.androidx.compose.koinViewModel
 
@@ -157,7 +158,12 @@ fun PreviewHomeScreenOnline() {
             state = HomeState(
                 powerState = PowerState.ON,
                 connectionStatus = DeviceConnectionStatus.Online(12),
-                telemetry = HomeTelemetryUiState()
+                telemetry = HomeTelemetryUiState(
+                    laptop = LaptopTelemetry(isOnline = true, isLocked = true),
+                    light = LightTelemetry(isOnline = true, isOn = true, brightnessPercent = 80, colorName = "Crimson"),
+                    relay = RelayTelemetry(isOnline = true, isAcActive = true),
+                    network = NetworkTelemetry(isConnected = true, latencyMs = 12)
+                )
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },
@@ -212,7 +218,14 @@ fun PreviewHomeScreenWithDialog() {
         HomeScreenContent(
             state = HomeState(
                 powerState = PowerState.ON,
-                showPowerOffDialog = true
+                showPowerOffDialog = true,
+                connectionStatus = DeviceConnectionStatus.Online(12),
+                telemetry = HomeTelemetryUiState(
+                    laptop = LaptopTelemetry(isOnline = true, isLocked = true),
+                    light = LightTelemetry(isOnline = true, isOn = true, brightnessPercent = 80, colorName = "Crimson"),
+                    relay = RelayTelemetry(isOnline = true, isAcActive = true),
+                    network = NetworkTelemetry(isConnected = true, latencyMs = 12)
+                )
             ),
             onIntent = {},
             snackbarHostState = remember { SnackbarHostState() },

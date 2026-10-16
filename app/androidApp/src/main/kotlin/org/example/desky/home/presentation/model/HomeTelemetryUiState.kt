@@ -8,8 +8,8 @@ data class HomeTelemetryUiState(
 )
 
 data class LaptopTelemetry(
-    val isOnline: Boolean = true,
-    val isLocked: Boolean = true,
+    val isOnline: Boolean = false,
+    val isLocked: Boolean = false,
     val deviceName: String = "Laptop Workstation"
 ) {
     val statusText: String
@@ -21,23 +21,24 @@ data class LaptopTelemetry(
 }
 
 data class LightTelemetry(
-    val isOnline: Boolean = true,
-    val isOn: Boolean = true,
-    val brightnessPercent: Int = 80,
-    val colorName: String = "Crimson",
+    val isOnline: Boolean = false,
+    val isOn: Boolean = false,
+    val brightnessPercent: Int = 0,
+    val colorName: String = "--",
     val label: String = "Ambient Light"
 ) {
     val statusText: String
         get() = when {
             !isOnline -> "Offline"
             !isOn -> "Online · Off"
-            else -> "$brightnessPercent% · $colorName"
+            colorName.isNotBlank() && colorName != "--" -> "$brightnessPercent% · $colorName"
+            else -> "$brightnessPercent%"
         }
 }
 
 data class RelayTelemetry(
-    val isOnline: Boolean = true,
-    val isAcActive: Boolean = true,
+    val isOnline: Boolean = false,
+    val isAcActive: Boolean = false,
     val label: String = "Laptop Charger Relay"
 ) {
     val statusText: String
@@ -49,8 +50,8 @@ data class RelayTelemetry(
 }
 
 data class NetworkTelemetry(
-    val isConnected: Boolean = true,
-    val latencyMs: Int = 12
+    val isConnected: Boolean = false,
+    val latencyMs: Int = 0
 ) {
     val statusText: String
         get() = if (isConnected) "LAN (${latencyMs}ms)" else "No LAN"

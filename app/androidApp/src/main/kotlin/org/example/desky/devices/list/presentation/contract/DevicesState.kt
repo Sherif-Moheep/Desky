@@ -3,15 +3,17 @@ package org.example.desky.devices.list.presentation.contract
 import androidx.compose.ui.graphics.Color
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
+import org.example.desky.model.LaptopTelemetryDto
 
 data class DevicesState(
     // Laptop state
     val laptopHost: String = "Sherif-Laptop.local",
     val laptopPort: Int = 8080,
     val laptopStatus: DeviceConnectionStatus = DeviceConnectionStatus.Idle,
-    val laptopPowerState: PowerState = PowerState.ON,
-    val isLaptopLocked: Boolean = true,
-    val laptopUptime: String = "3h 42m",
+    val laptopPowerState: PowerState = PowerState.OFF,
+    val isLaptopLocked: Boolean = false,
+    val laptopUptime: String = "--",
+    val laptopTelemetry: LaptopTelemetryDto? = null,
     val showLaptopShutdownDialog: Boolean = false,
 
     // ESP32 Relay state
@@ -23,7 +25,7 @@ data class DevicesState(
     val ledHost: String = "192.168.1.150",
     val ledPort: Int = 5577,
     val ledStatus: DeviceConnectionStatus = DeviceConnectionStatus.Idle,
-    val isLedPoweredOn: Boolean = true,
+    val isLedPoweredOn: Boolean = false,
     val ledBrightness: Float = 0.8f,
     val ledColor: Color = Color(0xFFE53935),
     val ledColorName: String = "Crimson",
@@ -33,7 +35,8 @@ data class DevicesState(
 ) {
     val onlineCount: Int
         get() = (if (laptopStatus is DeviceConnectionStatus.Online) 1 else 0) +
+                (if (espStatus is DeviceConnectionStatus.Online) 1 else 0) +
                 (if (ledStatus is DeviceConnectionStatus.Online) 1 else 0)
 
-    val totalDevicesCount: Int = 2
+    val totalDevicesCount: Int = 3
 }

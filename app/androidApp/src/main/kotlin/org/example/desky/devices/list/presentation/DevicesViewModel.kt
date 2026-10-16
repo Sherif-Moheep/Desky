@@ -23,6 +23,7 @@ import org.example.desky.devices.led.domain.usecase.LedUseCases
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
 import org.example.desky.devices.list.presentation.contract.DevicesIntent
 import org.example.desky.devices.list.presentation.contract.DevicesState
+import org.example.desky.model.LaptopTelemetryDto
 import kotlin.time.Duration.Companion.milliseconds
 
 class DevicesViewModel(
@@ -115,9 +116,18 @@ class DevicesViewModel(
             val espStatus = espDef.await()
             val ledStatus = ledDef.await()
 
+            // Fetch live laptop telemetry if online
+            val laptopTelemetry = if (laptopStatus is DeviceConnectionStatus.Online) {
+                laptopUseCases.getTelemetry().getOrNull()
+            } else null
+
             _state.update {
                 it.copy(
                     laptopStatus = laptopStatus,
+                    laptopPowerState = if (laptopStatus is DeviceConnectionStatus.Online) PowerState.ON else PowerState.OFF,
+                    laptopTelemetry = laptopTelemetry,
+                    laptopUptime = laptopTelemetry?.uptimeFormatted ?: if (laptopStatus is DeviceConnectionStatus.Online) it.laptopUptime else "--",
+                    isLaptopLocked = laptopTelemetry?.isLocked ?: false,
                     espStatus = espStatus,
                     ledStatus = ledStatus,
                     isRefreshing = false
@@ -180,10 +190,14 @@ class DevicesViewModel(
                             delay(2000.milliseconds)
                             val status = laptopUseCases.checkStatus()
                             if (status is DeviceConnectionStatus.Online) {
+                                val telemetry = laptopUseCases.getTelemetry().getOrNull()
                                 _state.update {
                                     it.copy(
                                         laptopPowerState = PowerState.ON,
-                                        laptopStatus = status
+                                        laptopStatus = status,
+                                        laptopTelemetry = telemetry,
+                                        laptopUptime = telemetry?.uptimeFormatted ?: it.laptopUptime,
+                                        isLaptopLocked = telemetry?.isLocked ?: false
                                     )
                                 }
                                 _effect.send(DevicesEffect.ShowSnackbar("Workstation online"))
@@ -216,7 +230,10 @@ class DevicesViewModel(
             _state.update {
                 it.copy(
                     laptopPowerState = PowerState.OFF,
-                    laptopStatus = DeviceConnectionStatus.Offline("Powered Down")
+                    laptopStatus = DeviceConnectionStatus.Offline("Powered Down"),
+                    laptopTelemetry = null,
+                    laptopUptime = "--",
+                    isLaptopLocked = false
                 )
             }
             _effect.send(DevicesEffect.ShowSnackbar("Shutdown command sent & relay reset"))
