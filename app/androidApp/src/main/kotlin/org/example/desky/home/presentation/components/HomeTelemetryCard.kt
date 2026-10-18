@@ -157,7 +157,12 @@ fun PreviewHomeTelemetryCardActive() {
             modifier = Modifier.padding(16.dp)
         ) {
             HomeTelemetryCard(
-                state = HomeTelemetryUiState()
+                state = HomeTelemetryUiState(
+                    laptop = LaptopTelemetry(isOnline = true, isLocked = true),
+                    light = LightTelemetry(isOnline = true, isOn = true, brightnessPercent = 80, colorName = "Crimson"),
+                    relay = RelayTelemetry(isOnline = true, isAcActive = true),
+                    network = NetworkTelemetry(isConnected = true, latencyMs = 12)
+                )
             )
         }
     }

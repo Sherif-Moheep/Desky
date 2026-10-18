@@ -1,4 +1,4 @@
-package org.example.desky.settings.presentation.model
+package org.example.desky.core.domain.model
 
 enum class DeviceType {
     ESP_RELAY,

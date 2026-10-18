@@ -12,16 +12,17 @@ import org.example.desky.devices.led.domain.usecase.DeletePresetUseCase
 import org.example.desky.devices.led.domain.usecase.LedUseCases
 import org.example.desky.devices.led.domain.usecase.ObserveConnectionStatusUseCase
 import org.example.desky.devices.led.domain.usecase.ObserveLastBrightnessUseCase
+import org.example.desky.devices.led.domain.usecase.ObserveLedDeviceStateUseCase
 import org.example.desky.devices.led.domain.usecase.ObservePresetsUseCase
 import org.example.desky.devices.led.domain.usecase.SaveLastBrightnessUseCase
 import org.example.desky.devices.led.domain.usecase.SavePresetUseCase
 import org.example.desky.devices.led.domain.usecase.SetLedColorUseCase
 import org.example.desky.devices.led.domain.usecase.SetLedPowerUseCase
 import org.example.desky.devices.led.presentation.LedViewModel
-import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val ledModule = module {
@@ -31,8 +32,8 @@ val ledModule = module {
     singleOf(::LedPresetDataStore)
 
     // Repositories
-    singleOf(::LedPresetRepositoryImpl) { bind<LedPresetRepository>() }
-    singleOf(::LedControllerRepositoryImpl) { bind<LedControllerRepository>() }
+    singleOf(::LedPresetRepositoryImpl) bind LedPresetRepository::class
+    singleOf(::LedControllerRepositoryImpl) bind LedControllerRepository::class
 
     // Use cases
     factoryOf(::ObservePresetsUseCase)
@@ -44,6 +45,7 @@ val ledModule = module {
     factoryOf(::SetLedColorUseCase)
     factoryOf(::ConnectLedUseCase)
     factoryOf(::ObserveConnectionStatusUseCase)
+    factoryOf(::ObserveLedDeviceStateUseCase)
     factoryOf(::LedUseCases)
 
     // ViewModel

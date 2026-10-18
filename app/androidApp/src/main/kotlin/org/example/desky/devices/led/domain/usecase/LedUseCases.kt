@@ -9,5 +9,6 @@ data class LedUseCases(
     val savePreset: SavePresetUseCase,
     val deletePreset: DeletePresetUseCase,
     val observeLastBrightness: ObserveLastBrightnessUseCase,
-    val saveLastBrightness: SaveLastBrightnessUseCase
+    val saveLastBrightness: SaveLastBrightnessUseCase,
+    val observeDeviceState: ObserveLedDeviceStateUseCase
 )

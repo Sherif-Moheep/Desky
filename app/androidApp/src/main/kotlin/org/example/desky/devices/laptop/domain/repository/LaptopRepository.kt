@@ -7,6 +7,7 @@ import org.example.desky.model.LaptopTelemetryDto
 
 interface LaptopRepository {
     val connectionStatus: StateFlow<DeviceConnectionStatus>
+    val telemetry: StateFlow<LaptopTelemetryDto?>
     suspend fun checkStatus(): DeviceConnectionStatus
     suspend fun discover(): Result<DeviceEndpoint>
     suspend fun getTelemetry(): Result<LaptopTelemetryDto>

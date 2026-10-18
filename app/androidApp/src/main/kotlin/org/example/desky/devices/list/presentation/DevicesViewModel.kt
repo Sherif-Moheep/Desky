@@ -3,9 +3,7 @@ package org.example.desky.devices.list.presentation
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,22 +12,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.example.desky.core.domain.repository.SettingsRepository
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.PowerState
-import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
-import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
-import org.example.desky.devices.led.domain.usecase.LedUseCases
+import org.example.desky.core.domain.usecase.DeskUseCases
+import org.example.desky.core.domain.usecase.ObserveSettingsUseCase
 import org.example.desky.devices.list.presentation.contract.DevicesEffect
 import org.example.desky.devices.list.presentation.contract.DevicesIntent
 import org.example.desky.devices.list.presentation.contract.DevicesState
-import kotlin.time.Duration.Companion.milliseconds
 
 class DevicesViewModel(
-    private val settingsRepository: SettingsRepository,
-    private val ledUseCases: LedUseCases,
-    private val laptopUseCases: LaptopUseCases,
-    private val espUseCases: EspRelayUseCases
+    private val observeSettings: ObserveSettingsUseCase,
+    private val deskUseCases: DeskUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(DevicesState())
@@ -39,9 +32,9 @@ class DevicesViewModel(
     val effect: Flow<DevicesEffect> = _effect.receiveAsFlow()
 
     init {
-        // Observe endpoints from Settings and perform initial auto-ping
+        // Observe endpoints from Settings and perform initial scan
         viewModelScope.launch {
-            val settings = settingsRepository.settingsFlow.first()
+            val settings = observeSettings().first()
             _state.update {
                 it.copy(
                     laptopHost = settings.laptop.host,
@@ -55,17 +48,28 @@ class DevicesViewModel(
             refreshAllDevices(isManual = false)
         }
 
-        // Observe LED Connection Status
+        // Observe unified Desk State (SSOT)
         viewModelScope.launch {
-            ledUseCases.observeConnectionStatus().collect { status ->
-                _state.update { it.copy(ledStatus = status) }
-            }
-        }
+            deskUseCases.observeDeskState().collect { snapshot ->
+                _state.update { current ->
+                    val ledColor = snapshot.ledDeviceState?.let {
+                        Color(it.red, it.green, it.blue)
+                    } ?: current.ledColor
 
-        // Observe LED Brightness
-        viewModelScope.launch {
-            ledUseCases.observeLastBrightness().collect { brightness ->
-                _state.update { it.copy(ledBrightness = brightness) }
+                    current.copy(
+                        laptopStatus = snapshot.laptopStatus,
+                        laptopPowerState = snapshot.derivedPowerState,
+                        laptopTelemetry = snapshot.laptopTelemetry,
+                        isLaptopLocked = snapshot.laptopTelemetry?.isLocked ?: false,
+                        laptopUptime = snapshot.laptopTelemetry?.uptimeFormatted ?: if (snapshot.laptopStatus is DeviceConnectionStatus.Online) current.laptopUptime else "--",
+                        espStatus = snapshot.espStatus,
+                        ledStatus = snapshot.ledStatus,
+                        isLedPoweredOn = snapshot.isLedPoweredOn,
+                        ledBrightness = snapshot.ledBrightness,
+                        ledColor = ledColor,
+                        ledColorName = snapshot.ledColorName
+                    )
+                }
             }
         }
     }
@@ -93,61 +97,26 @@ class DevicesViewModel(
                 )
             }
 
-            val laptopDef = async {
-                val endpoint = settingsRepository.laptopEndpointFlow.first()
-                _state.update { it.copy(laptopHost = endpoint.host, laptopPort = endpoint.port) }
-                laptopUseCases.checkStatus()
-            }
-
-            val espDef = async {
-                val endpoint = settingsRepository.espEndpointFlow.first()
-                _state.update { it.copy(espHost = endpoint.host, espPort = endpoint.port) }
-                espUseCases.checkStatus()
-            }
-
-            val ledDef = async {
-                val endpoint = settingsRepository.ledEndpointFlow.first()
-                _state.update { it.copy(ledHost = endpoint.host, ledPort = endpoint.port) }
-                checkLedConnection()
-            }
-
-            val laptopStatus = laptopDef.await()
-            val espStatus = espDef.await()
-            val ledStatus = ledDef.await()
+            // Sync configured endpoints
+            val settings = observeSettings().first()
 
             _state.update {
                 it.copy(
-                    laptopStatus = laptopStatus,
-                    espStatus = espStatus,
-                    ledStatus = ledStatus,
-                    isRefreshing = false
+                    laptopHost = settings.laptop.host,
+                    laptopPort = settings.laptop.port,
+                    espHost = settings.espRelay.host,
+                    espPort = settings.espRelay.port,
+                    ledHost = settings.ledStrip.host,
+                    ledPort = settings.ledStrip.port
                 )
             }
 
-            if (isManual) {
-                val onlineCount = (if (laptopStatus is DeviceConnectionStatus.Online) 1 else 0) +
-                        (if (espStatus is DeviceConnectionStatus.Online) 1 else 0) +
-                        (if (ledStatus is DeviceConnectionStatus.Online) 1 else 0)
-                _effect.send(DevicesEffect.ShowSnackbar("Scan complete - $onlineCount endpoints reachable"))
-            }
-        }
-    }
+            val snapshot = deskUseCases.refreshDeskState()
+            _state.update { it.copy(isRefreshing = false) }
 
-    private suspend fun checkLedConnection(): DeviceConnectionStatus {
-        val result = ledUseCases.connect(forceRediscovery = false)
-        return if (result.isSuccess) {
-            val deviceState = result.getOrNull()
-            if (deviceState != null) {
-                _state.update {
-                    it.copy(
-                        isLedPoweredOn = deviceState.isOn,
-                        ledColor = Color(deviceState.red, deviceState.green, deviceState.blue)
-                    )
-                }
+            if (isManual) {
+                _effect.send(DevicesEffect.ShowSnackbar("Scan complete - ${snapshot.onlineDevicesCount} endpoints reachable"))
             }
-            ledUseCases.observeConnectionStatus().value
-        } else {
-            DeviceConnectionStatus.Offline("Unreachable")
         }
     }
 
@@ -165,32 +134,17 @@ class DevicesViewModel(
                 }
                 viewModelScope.launch {
                     _effect.send(DevicesEffect.ShowSnackbar("Relay triggered - starting workstation..."))
-                    val relayResult = espUseCases.powerOn()
-                    if (relayResult.isFailure) {
+                    val result = deskUseCases.powerOnDesk()
+                    if (result.isFailure) {
                         _state.update {
                             it.copy(
                                 laptopPowerState = PowerState.OFF,
                                 laptopStatus = DeviceConnectionStatus.Offline("Relay unreachable")
                             )
                         }
-                        _effect.send(DevicesEffect.ShowSnackbar("Failed to trigger relay: ${relayResult.exceptionOrNull()?.message}"))
+                        _effect.send(DevicesEffect.ShowSnackbar("Failed to trigger relay: ${result.exceptionOrNull()?.message}"))
                     } else {
-                        var attempts = 0
-                        while (attempts < 15) {
-                            delay(2000.milliseconds)
-                            val status = laptopUseCases.checkStatus()
-                            if (status is DeviceConnectionStatus.Online) {
-                                _state.update {
-                                    it.copy(
-                                        laptopPowerState = PowerState.ON,
-                                        laptopStatus = status
-                                    )
-                                }
-                                _effect.send(DevicesEffect.ShowSnackbar("Workstation online"))
-                                break
-                            }
-                            attempts++
-                        }
+                        _effect.send(DevicesEffect.ShowSnackbar("Workstation online"))
                     }
                 }
             }
@@ -210,13 +164,14 @@ class DevicesViewModel(
         }
         viewModelScope.launch {
             _effect.send(DevicesEffect.ShowSnackbar("Shutting down workstation..."))
-            laptopUseCases.shutdown()
-            espUseCases.powerOff()
-            delay(1200.milliseconds)
+            deskUseCases.shutdownLaptop()
             _state.update {
                 it.copy(
                     laptopPowerState = PowerState.OFF,
-                    laptopStatus = DeviceConnectionStatus.Offline("Powered Down")
+                    laptopStatus = DeviceConnectionStatus.Offline("Powered Down"),
+                    laptopTelemetry = null,
+                    laptopUptime = "--",
+                    isLaptopLocked = false
                 )
             }
             _effect.send(DevicesEffect.ShowSnackbar("Shutdown command sent & relay reset"))
@@ -226,7 +181,7 @@ class DevicesViewModel(
     private fun handleToggleLedPower(targetOn: Boolean) {
         _state.update { it.copy(isLedPoweredOn = targetOn) }
         viewModelScope.launch {
-            val result = ledUseCases.setPower(targetOn)
+            val result = deskUseCases.setLedPower(targetOn)
             if (result.isSuccess) {
                 _effect.send(
                     DevicesEffect.ShowSnackbar(

@@ -9,11 +9,12 @@ import org.example.desky.devices.esp.domain.usecase.DiscoverEspUseCase
 import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
 import org.example.desky.devices.esp.domain.usecase.GetEspStatusUseCase
 import org.example.desky.devices.esp.domain.usecase.ObserveEspConnectionStatusUseCase
+import org.example.desky.devices.esp.domain.usecase.ObserveEspRelayStatusUseCase
 import org.example.desky.devices.esp.domain.usecase.PowerOffEspUseCase
 import org.example.desky.devices.esp.domain.usecase.PowerOnEspUseCase
-import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val espModule = module {
@@ -22,7 +23,7 @@ val espModule = module {
     singleOf(::EspDiscoveryDataSource)
 
     // Repositories
-    singleOf(::EspRelayRepositoryImpl) { bind<EspRelayRepository>() }
+    singleOf(::EspRelayRepositoryImpl) bind EspRelayRepository::class
 
     // Use cases
     factoryOf(::CheckEspStatusUseCase)
@@ -31,5 +32,6 @@ val espModule = module {
     factoryOf(::GetEspStatusUseCase)
     factoryOf(::PowerOnEspUseCase)
     factoryOf(::PowerOffEspUseCase)
+    factoryOf(::ObserveEspRelayStatusUseCase)
     factoryOf(::EspRelayUseCases)
 }

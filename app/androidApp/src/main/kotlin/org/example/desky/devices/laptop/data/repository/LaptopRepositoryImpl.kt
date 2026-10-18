@@ -23,6 +23,9 @@ class LaptopRepositoryImpl(
     private val _connectionStatus = MutableStateFlow<DeviceConnectionStatus>(DeviceConnectionStatus.Idle)
     override val connectionStatus: StateFlow<DeviceConnectionStatus> = _connectionStatus.asStateFlow()
 
+    private val _telemetry = MutableStateFlow<LaptopTelemetryDto?>(null)
+    override val telemetry: StateFlow<LaptopTelemetryDto?> = _telemetry.asStateFlow()
+
     override suspend fun checkStatus(): DeviceConnectionStatus {
         _connectionStatus.value = DeviceConnectionStatus.Pinging
 
@@ -42,6 +45,7 @@ class LaptopRepositoryImpl(
 
         val offlineStatus = DeviceConnectionStatus.Offline("Unreachable")
         _connectionStatus.value = offlineStatus
+        _telemetry.value = null
         return offlineStatus
     }
 
@@ -58,6 +62,7 @@ class LaptopRepositoryImpl(
     override suspend fun getTelemetry(): Result<LaptopTelemetryDto> {
         return try {
             val telemetry = remoteDataSource.getTelemetry()
+            _telemetry.value = telemetry
             Result.success(telemetry)
         } catch (c: CancellationException) {
             throw c
@@ -66,13 +71,40 @@ class LaptopRepositoryImpl(
         }
     }
 
-    override suspend fun lock(): Result<Unit> = executeCommand("Lock") { remoteDataSource.lock() }
+    override suspend fun lock(): Result<Unit> {
+        val result = executeCommand("Lock") { remoteDataSource.lock() }
+        if (result.isSuccess) {
+            _telemetry.value = _telemetry.value?.copy(isLocked = true)
+        }
+        return result
+    }
 
-    override suspend fun sleep(): Result<Unit> = executeCommand("Sleep") { remoteDataSource.sleep() }
+    override suspend fun sleep(): Result<Unit> {
+        val result = executeCommand("Sleep") { remoteDataSource.sleep() }
+        if (result.isSuccess) {
+            _connectionStatus.value = DeviceConnectionStatus.Offline("Sleeping")
+            _telemetry.value = null
+        }
+        return result
+    }
 
-    override suspend fun restart(): Result<Unit> = executeCommand("Restart") { remoteDataSource.restart() }
+    override suspend fun restart(): Result<Unit> {
+        val result = executeCommand("Restart") { remoteDataSource.restart() }
+        if (result.isSuccess) {
+            _connectionStatus.value = DeviceConnectionStatus.Offline("Restarting")
+            _telemetry.value = null
+        }
+        return result
+    }
 
-    override suspend fun shutdown(): Result<Unit> = executeCommand("Shutdown") { remoteDataSource.shutdown() }
+    override suspend fun shutdown(): Result<Unit> {
+        val result = executeCommand("Shutdown") { remoteDataSource.shutdown() }
+        if (result.isSuccess) {
+            _connectionStatus.value = DeviceConnectionStatus.Offline("Shut down")
+            _telemetry.value = null
+        }
+        return result
+    }
 
     private suspend fun pingCurrentEndpoint(): DeviceConnectionStatus.Online? {
         val startMs = System.currentTimeMillis()
