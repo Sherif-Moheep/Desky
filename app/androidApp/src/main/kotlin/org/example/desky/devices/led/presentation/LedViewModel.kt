@@ -74,6 +74,15 @@ class LedViewModel(
             }
         }
 
+        // Observe device state (power toggles from other screens)
+        viewModelScope.launch {
+            useCases.observeDeviceState().collect { deviceState ->
+                if (deviceState != null) {
+                    _state.update { it.copy(isOn = deviceState.isOn) }
+                }
+            }
+        }
+
         // Dedicated single-flight coroutine for socket transmissions
         viewModelScope.launch {
             colorUpdateChannel
@@ -114,7 +123,7 @@ class LedViewModel(
         viewModelScope.launch {
             _state.update {
                 it.copy(
-                    isBusy = if (!isRefresh) true else it.isBusy,
+                    isBusy = !isRefresh || it.isBusy,
                     isRefreshing = isRefresh
                 )
             }

@@ -23,6 +23,9 @@ class EspRelayRepositoryImpl(
     private val _connectionStatus = MutableStateFlow<DeviceConnectionStatus>(DeviceConnectionStatus.Idle)
     override val connectionStatus: StateFlow<DeviceConnectionStatus> = _connectionStatus.asStateFlow()
 
+    private val _relayStatus = MutableStateFlow<EspRelayStatus?>(null)
+    override val relayStatus: StateFlow<EspRelayStatus?> = _relayStatus.asStateFlow()
+
     override suspend fun checkStatus(): DeviceConnectionStatus {
         _connectionStatus.value = DeviceConnectionStatus.Pinging
 
@@ -32,7 +35,7 @@ class EspRelayRepositoryImpl(
             return online
         }
 
-        // 2. Fallback to mDNS auto-discovery if configured host failed
+        // 2. Fallback to mDNS auto-discovery if the configured host failed
         if (discover().isSuccess) {
             pingCurrentEndpoint()?.let { online ->
                 _connectionStatus.value = online
@@ -42,6 +45,7 @@ class EspRelayRepositoryImpl(
 
         val offlineStatus = DeviceConnectionStatus.Offline("Unreachable")
         _connectionStatus.value = offlineStatus
+        _relayStatus.value = null
         return offlineStatus
     }
 
@@ -57,8 +61,9 @@ class EspRelayRepositoryImpl(
 
     override suspend fun getStatus(): Result<EspRelayStatus> {
         return try {
-            val status = remoteDataSource.getStatus()
-            Result.success(status.toDomain())
+            val status = remoteDataSource.getStatus().toDomain()
+            _relayStatus.value = status
+            Result.success(status)
         } catch (c: CancellationException) {
             throw c
         } catch (e: Exception) {
@@ -66,9 +71,35 @@ class EspRelayRepositoryImpl(
         }
     }
 
-    override suspend fun powerOn(): Result<Unit> = executeCommand("Power ON") { remoteDataSource.powerOn() }
+    override suspend fun powerOn(): Result<Unit> {
+        val result = executeCommand("Power ON") { remoteDataSource.powerOn() }
+        if (result.isSuccess) {
+            _relayStatus.value = _relayStatus.value?.copy(isOn = true)
+                ?: EspRelayStatus(
+                    isOnline = true,
+                    isOn = true,
+                    uptimeSeconds = 0L,
+                    wifiRssi = 0,
+                    ip = ""
+                )
+        }
+        return result
+    }
 
-    override suspend fun powerOff(): Result<Unit> = executeCommand("Power OFF") { remoteDataSource.powerOff() }
+    override suspend fun powerOff(): Result<Unit> {
+        val result = executeCommand("Power OFF") { remoteDataSource.powerOff() }
+        if (result.isSuccess) {
+            _relayStatus.value = _relayStatus.value?.copy(isOn = false)
+                ?: EspRelayStatus(
+                    isOnline = true,
+                    isOn = false,
+                    uptimeSeconds = 0L,
+                    wifiRssi = 0,
+                    ip = ""
+                )
+        }
+        return result
+    }
 
     private suspend fun pingCurrentEndpoint(): DeviceConnectionStatus.Online? {
         val startMs = System.currentTimeMillis()

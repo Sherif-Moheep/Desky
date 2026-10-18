@@ -10,14 +10,15 @@ import org.example.desky.devices.laptop.domain.usecase.GetLaptopTelemetryUseCase
 import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
 import org.example.desky.devices.laptop.domain.usecase.LockLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.ObserveLaptopConnectionStatusUseCase
+import org.example.desky.devices.laptop.domain.usecase.ObserveLaptopTelemetryUseCase
 import org.example.desky.devices.laptop.domain.usecase.RestartLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.ShutdownLaptopUseCase
 import org.example.desky.devices.laptop.domain.usecase.SleepLaptopUseCase
 import org.example.desky.devices.laptop.presentation.LaptopViewModel
-import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val laptopModule = module {
@@ -26,7 +27,7 @@ val laptopModule = module {
     singleOf(::LaptopDiscoveryDataSource)
 
     // Repositories
-    singleOf(::LaptopRepositoryImpl) { bind<LaptopRepository>() }
+    singleOf(::LaptopRepositoryImpl) bind LaptopRepository::class
 
     // Use cases
     factoryOf(::CheckLaptopStatusUseCase)
@@ -37,6 +38,7 @@ val laptopModule = module {
     factoryOf(::SleepLaptopUseCase)
     factoryOf(::RestartLaptopUseCase)
     factoryOf(::ShutdownLaptopUseCase)
+    factoryOf(::ObserveLaptopTelemetryUseCase)
     factoryOf(::LaptopUseCases)
 
     // ViewModel

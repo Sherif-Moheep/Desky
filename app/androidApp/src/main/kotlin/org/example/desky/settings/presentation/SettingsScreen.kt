@@ -36,7 +36,7 @@ import org.example.desky.settings.presentation.components.AppInfoCard
 import org.example.desky.settings.presentation.components.DeviceConfigCard
 import org.example.desky.core.presentation.components.ConfirmationDialog
 import org.example.desky.settings.presentation.components.ThemeSelectorCard
-import org.example.desky.settings.presentation.model.DeviceType
+import org.example.desky.core.domain.model.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
 import org.example.desky.settings.presentation.contract.SettingsState

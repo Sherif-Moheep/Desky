@@ -10,21 +10,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.desky.core.domain.model.AppThemeMode
-import org.example.desky.core.domain.repository.SettingsRepository
+import org.example.desky.core.domain.usecase.ObserveThemeModeUseCase
 import org.example.desky.core.presentation.theme.DeskyTheme
 import org.example.desky.navigation.NavigationRoot
 import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
 
-    private val settingsRepository: SettingsRepository by inject()
+    private val observeThemeMode: ObserveThemeModeUseCase by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         setContent {
-            val themeMode by settingsRepository.themeModeFlow.collectAsStateWithLifecycle(initialValue = AppThemeMode.SYSTEM)
+            val themeMode by observeThemeMode().collectAsStateWithLifecycle(initialValue = AppThemeMode.SYSTEM)
             val isDarkTheme = when (themeMode) {
                 AppThemeMode.SYSTEM -> isSystemInDarkTheme()
                 AppThemeMode.DARK -> true

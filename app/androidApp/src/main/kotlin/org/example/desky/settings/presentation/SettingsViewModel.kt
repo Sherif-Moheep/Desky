@@ -15,21 +15,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.example.desky.core.domain.model.DeviceConnectionStatus
 import org.example.desky.core.domain.model.AppSettings
-import org.example.desky.core.domain.repository.SettingsRepository
-import org.example.desky.devices.esp.domain.usecase.EspRelayUseCases
-import org.example.desky.devices.laptop.domain.usecase.LaptopUseCases
-import org.example.desky.devices.led.domain.usecase.LedUseCases
-import org.example.desky.settings.presentation.model.DeviceType
+import org.example.desky.core.domain.usecase.DeskUseCases
+import org.example.desky.core.domain.usecase.SettingsUseCases
+import org.example.desky.core.domain.model.DeviceType
 import org.example.desky.settings.presentation.contract.SettingsEffect
 import org.example.desky.settings.presentation.contract.SettingsIntent
 import org.example.desky.settings.presentation.contract.SettingsState
 import kotlin.time.Duration.Companion.milliseconds
 
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepository,
-    private val espUseCases: EspRelayUseCases,
-    private val laptopUseCases: LaptopUseCases,
-    private val ledUseCases: LedUseCases
+    private val settingsUseCases: SettingsUseCases,
+    private val deskUseCases: DeskUseCases
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -42,7 +38,7 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            settingsRepository.settingsFlow.collect { settings ->
+            settingsUseCases.observeSettings().collect { settings ->
                 if (debounceSaveJob?.isActive == true) return@collect
                 _state.update { current ->
                     current.copy(
@@ -88,7 +84,7 @@ class SettingsViewModel(
             is SettingsIntent.SetThemeMode -> {
                 _state.update { it.copy(themeMode = intent.mode) }
                 viewModelScope.launch {
-                    settingsRepository.updateThemeMode(intent.mode)
+                    settingsUseCases.updateThemeMode(intent.mode)
                 }
             }
             is SettingsIntent.PingDevice -> {
@@ -124,9 +120,9 @@ class SettingsViewModel(
         val laptopPortInt = currentState.laptopPort.toIntOrNull() ?: 8080
         val ledPortInt = currentState.ledPort.toIntOrNull() ?: 5577
 
-        settingsRepository.updateEspEndpoint(currentState.espHost, espPortInt)
-        settingsRepository.updateLaptopEndpoint(currentState.laptopHost, laptopPortInt)
-        settingsRepository.updateLedEndpoint(currentState.ledHost, ledPortInt)
+        settingsUseCases.updateEspEndpoint(currentState.espHost, espPortInt)
+        settingsUseCases.updateLaptopEndpoint(currentState.laptopHost, laptopPortInt)
+        settingsUseCases.updateLedEndpoint(currentState.ledHost, ledPortInt)
     }
 
     private fun updateDeviceStatus(
@@ -144,20 +140,7 @@ class SettingsViewModel(
 
     private suspend fun checkDeviceStatus(
         device: DeviceType
-    ): DeviceConnectionStatus = when (device) {
-        DeviceType.ESP_RELAY -> espUseCases.checkStatus()
-        DeviceType.LAPTOP -> laptopUseCases.checkStatus()
-        DeviceType.LED_STRIP -> checkLedStatus()
-    }
-
-    private suspend fun checkLedStatus(): DeviceConnectionStatus {
-        val result = ledUseCases.connect(forceRediscovery = false)
-        return if (result.isSuccess) {
-            ledUseCases.observeConnectionStatus().value
-        } else {
-            DeviceConnectionStatus.Offline(result.exceptionOrNull()?.message ?: "Unreachable")
-        }
-    }
+    ): DeviceConnectionStatus = deskUseCases.pingDevice(device)
 
     private fun pingDevice(
         device: DeviceType
@@ -206,7 +189,7 @@ class SettingsViewModel(
 
     private fun resetSettings() {
         viewModelScope.launch {
-            settingsRepository.resetToDefaults()
+            settingsUseCases.resetToDefaults()
             val defaults = AppSettings()
             _state.update {
                 it.copy(

@@ -8,5 +8,6 @@ data class LaptopUseCases(
     val lock: LockLaptopUseCase,
     val sleep: SleepLaptopUseCase,
     val restart: RestartLaptopUseCase,
-    val shutdown: ShutdownLaptopUseCase
+    val shutdown: ShutdownLaptopUseCase,
+    val observeTelemetry: ObserveLaptopTelemetryUseCase
 )

@@ -6,5 +6,6 @@ data class EspRelayUseCases(
     val discover: DiscoverEspUseCase,
     val getStatus: GetEspStatusUseCase,
     val powerOn: PowerOnEspUseCase,
-    val powerOff: PowerOffEspUseCase
+    val powerOff: PowerOffEspUseCase,
+    val observeRelayStatus: ObserveEspRelayStatusUseCase
 )
