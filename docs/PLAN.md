@@ -2,6 +2,9 @@
 
 A mobile app to control your desk setup (laptop power, LED strip) from your phone, entirely over the local network with no cloud dependency.
 
+> [!NOTE]
+> **Historical Design & Planning Document**: This document captures the initial architecture proposals and technical decisions established prior to implementation. For the finalized system architecture, active endpoints, and hardware setup, please refer to the main [README.md](../README.md) and [docs/ENDPOINTS.md](ENDPOINTS.md).
+
 ---
 
 ## Architecture Overview
