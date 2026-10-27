@@ -1,5 +1,8 @@
 package org.example.desky.services
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.image.BufferedImage
@@ -35,6 +38,13 @@ object SystemTrayService {
                         }
                     }
                 }
+                val turnOnLedItem = MenuItem("Turn On LED Strip").apply {
+                    addActionListener {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            LedService.turnOn()
+                        }
+                    }
+                }
                 val exitItem = MenuItem("Exit").apply {
                     addActionListener {
                         logger.info("Exit requested via System Tray.")
@@ -43,6 +53,7 @@ object SystemTrayService {
                 }
 
                 add(browseItem)
+                add(turnOnLedItem)
                 addSeparator()
                 add(exitItem)
             }

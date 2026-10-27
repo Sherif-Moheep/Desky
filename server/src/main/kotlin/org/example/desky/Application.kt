@@ -7,6 +7,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import org.example.desky.services.LedService
 import org.example.desky.services.MdnsServerService
 import org.example.desky.services.SystemTrayService
 import kotlin.system.exitProcess
@@ -28,6 +29,8 @@ fun main() {
         SystemTrayService.remove()
         MdnsServerService.stop()
     })
+
+    LedService.turnOnOnStartup()
 
     server.start(wait = true)
 }
